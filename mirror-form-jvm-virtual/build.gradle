@@ -70,15 +70,15 @@ dependencies {
     expectedBy project(':mirror-form-metadata')
     api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1"
 
-    api "com.lightningkite:koolui-jvm-virtual:${project.version}"
+    api 'com.lightningkite:koolui-jvm-virtual:0.0.2'
 
-    api "com.lightningkite:kommon-jvm:${project.version}"
-    api "com.lightningkite:kommunicate-jvm:${project.version}"
-    api "com.lightningkite:lokalize-jvm:${project.version}"
-    api "com.lightningkite:reacktive-jvm:${project.version}"
-    api "com.lightningkite:recktangle-jvm:${project.version}"
-    api "com.lightningkite:mirror-runtime-jvm:${project.version}"
-    api "com.lightningkite:mirror-archive-api-jvm:${project.version}"
+    api 'com.lightningkite:kommon-jvm:0.0.2'
+    api 'com.lightningkite:kommunicate-jvm:0.0.2'
+    api 'com.lightningkite:lokalize-jvm:0.0.2'
+    api 'com.lightningkite:reacktive-jvm:0.0.2'
+    api 'com.lightningkite:recktangle-jvm:0.0.2'
+    api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+    api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
 
     testApi 'junit:junit:4.12'
 }
