@@ -3,3 +3,5 @@ include ':mirror-form-android'
 include ':mirror-form-javafx'
 include ':mirror-form-js'
 include ':mirror-form-jvm-virtual'
+
+enableFeaturePreview('GRADLE_METADATA')
