@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="FacetManager">
+    <facet type="android-gradle" name="Android-Gradle">
+      <configuration>
+        <option name="GRADLE_PROJECT_PATH" value=":mirror-form" />
+      </configuration>
+    </facet>
+    <facet type="android" name="Android">
+      <configuration>
+        <option name="SELECTED_BUILD_VARIANT" value="debug" />
+        <option name="ASSEMBLE_TASK_NAME" value="assembleDebug" />
+        <option name="COMPILE_JAVA_TASK_NAME" value="compileDebugSources" />
+        <afterSyncTasks>
+          <task>generateDebugSources</task>
+        </afterSyncTasks>
+        <option name="ALLOW_USER_CONFIGURATION" value="false" />
+        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
+        <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
+        <option name="RES_FOLDERS_RELATIVE_PATH" value="" />
+        <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/src/main/assets" />
+        <option name="PROJECT_TYPE" value="1" />
+      </configuration>
+    </facet>
+    <facet type="kotlin-language" name="Kotlin">
+      <configuration version="3" platform="JVM 1.6" useProjectSettings="false" isTestModule="false" externalProjectId=":mirror-form">
+        <sourceSets>
+          <sourceSet>com.lightningkite.mirror-form.commonMain</sourceSet>
+        </sourceSets>
+        <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
+        <compilerSettings />
+        <compilerArguments>
+          <option name="destination" value="$MODULE_DIR$/build/tmp/kotlin-classes/debug" />
+          <option name="classpath" value="$USER_HOME$/.gradle/caches/transforms-1/files-1.1/koolui-android-0.0.2.aar/328f05a58cbdb982850ffca3242e9dec/jars/classes.jar:/Users/josephivie/.m2/repository/com/lightningkite/lokalize-jvm/0.0.2/lokalize-jvm-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/reacktive-jvm/0.0.2/reacktive-jvm-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/mirror-runtime-jvm/0.0.2/mirror-runtime-jvm-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/kommon-jvm/0.0.2/kommon-jvm-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/kommunicate-jvm/0.0.2/kommunicate-jvm-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/recktangle-jvm/0.0.2/recktangle-jvm-0.0.2.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.3.10/71d0fa967493eb76648b575edf1762cb2d0c7f10/kotlin-stdlib-jdk8-1.3.10.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-android/1.0.1/92ab20a9ba1378b29ca88d5ecbd442e9bb4186d3/kotlinx-coroutines-android-1.0.1.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp3/okhttp/3.11.0/75966e05a49046ca2ae734e5626f28837a8d1e82/okhttp-3.11.0.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/design-27.1.1.aar/a4ffa3b6cddadbd86665ad5a8cf8a19e/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/appcompat-v7-27.1.1.aar/4e29e8e2b3e1004863f7d0e3aa928ebd/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/cardview-v7-27.1.1.aar/a63b261c594419478f19daa32a574272/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/gridlayout-v7-27.1.1.aar/c8f339974ad3de6b8e6daa53751ef019/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/recyclerview-v7-27.1.1.aar/0031ecabeecee5b9e459592e166f7575/jars/classes.jar:/Users/josephivie/.m2/repository/com/lightningkite/koolui-metadata/0.0.2/koolui-metadata-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/kommunicate-metadata/0.0.2/kommunicate-metadata-0.0.2.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core/1.0.1/f33e8dab753f33d1bbb07cca664fd6f13d993d7e/kotlinx-coroutines-core-1.0.1.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-common/1.0.1/679991d1b388fd9392eeb3d63b10b3f4c284f389/kotlinx-coroutines-core-common-1.0.1.jar:/Users/josephivie/.m2/repository/com/lightningkite/lokalize-metadata/0.0.2/lokalize-metadata-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/reacktive-metadata/0.0.2/reacktive-metadata-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/mirror-runtime-metadata/0.0.2/mirror-runtime-metadata-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/kommon-metadata/0.0.2/kommon-metadata-0.0.2.jar:/Users/josephivie/.m2/repository/com/lightningkite/recktangle-metadata/0.0.2/recktangle-metadata-0.0.2.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.10/4d147bf43060dc43d61b096e24da1e67dfe0c032/kotlin-stdlib-jdk7-1.3.10.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.3.10/b178c1501609c6e4ee8be635513cb023a466457d/kotlin-stdlib-1.3.10.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.3.10/1b19d99229dcedad7caf50534dce38fe82845269/kotlin-stdlib-common-1.3.10.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/com.squareup.okio/okio/1.14.0/102d7be47241d781ef95f1581d414b0943053130/okio-1.14.0.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-v4-27.1.1.aar/f524c0dac748ed672b32973194e13740/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-fragment-27.1.1.aar/fa53a63ab7dd05c580be23ba2e3967e3/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/animated-vector-drawable-27.1.1.aar/6919983b9ce2afe2864f7e31877f2ec1/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-core-ui-27.1.1.aar/04d803be851d9d61a57408d51795f2b4/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-core-utils-27.1.1.aar/aaf2d037489478a438a00152383e8b4a/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-vector-drawable-27.1.1.aar/b5d037041460aa03d394383794f79093/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/transition-27.1.1.aar/2281038a98318c0c3ebebc6b2bab2ab4/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-media-compat-27.1.1.aar/301677010d7c96d4bbfefa3fdbb3a3df/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/support-compat-27.1.1.aar/405fe25f7b8954fc70d73fe0d4f00d15/jars/classes.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/com.android.support/support-annotations/27.1.1/39ded76b5e1ce1c5b2688e1d25cdc20ecee32007/support-annotations-27.1.1.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/livedata-core-1.1.0.aar/c09755ba6524bfe329fd05b702825dc9/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/viewmodel-1.1.0.aar/df937d05b7be091885da6475551d40bf/jars/classes.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/runtime-1.1.0.aar/47c0eeddbcb970642c1a3d68243931b5/jars/classes.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/android.arch.lifecycle/common/1.1.0/edf3f7bfb84a7521d0599efa3b0113a0ee90f85/common-1.1.0.jar:/Users/josephivie/.gradle/caches/transforms-1/files-1.1/runtime-1.1.0.aar/8076f95a32c8bd5c0afe1ce2812f451f/jars/classes.jar:/Users/josephivie/.gradle/caches/modules-2/files-2.1/android.arch.core/common/1.1.0/8007981f7d7540d89cd18471b8e5dcd2b4f99167/common-1.1.0.jar:/Users/josephivie/Library/Android/sdk/platforms/android-27/android.jar" />
+          <option name="noStdlib" value="true" />
+          <option name="noReflect" value="true" />
+          <option name="moduleName" value="mirror-form_debug" />
+          <option name="addCompilerBuiltIns" value="true" />
+          <option name="loadBuiltInsFromDependencies" value="true" />
+          <option name="languageVersion" value="1.3" />
+          <option name="apiVersion" value="1.3" />
+          <option name="pluginOptions">
+            <array />
+          </option>
+          <option name="pluginClasspaths">
+            <array />
+          </option>
+          <option name="multiPlatform" value="true" />
+        </compilerArguments>
+      </configuration>
+    </facet>
+  </component>
+</module>
