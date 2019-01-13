@@ -36,6 +36,8 @@
     <orderEntry type="jdk" jdkName="Kotlin SDK" jdkType="KotlinSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="mirror-form_commonMain" />
+    <orderEntry type="library" name="Gradle: com.lightningkite:mirror-archive-api-js:0.0.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.lightningkite:mirror-archive-api-metadata:0.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.lightningkite:koolui-js:0.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.lightningkite:mirror-runtime-js:0.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.lightningkite:recktangle-js:0.0.2" level="project" />

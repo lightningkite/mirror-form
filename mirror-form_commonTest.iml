@@ -21,10 +21,13 @@
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$/src/commonTest" />
+    <content url="file://$MODULE_DIR$/src/commonTest">
+      <sourceFolder url="file://$MODULE_DIR$/src/commonTest/kotlin" type="kotlin-test" />
+    </content>
     <orderEntry type="jdk" jdkName="Kotlin SDK" jdkType="KotlinSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="mirror-form_commonMain" />
+    <orderEntry type="library" name="Gradle: com.lightningkite:mirror-archive-api-metadata:0.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.lightningkite:koolui-metadata:0.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.lightningkite:mirror-runtime-metadata:0.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.lightningkite:recktangle-metadata:0.0.2" level="project" />

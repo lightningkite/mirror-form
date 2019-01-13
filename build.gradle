@@ -116,6 +116,7 @@ kotlin {
                 api 'com.lightningkite:reacktive-metadata:0.0.2'
                 api 'com.lightningkite:recktangle-metadata:0.0.2'
                 api 'com.lightningkite:mirror-runtime-metadata:0.0.2'
+                api 'com.lightningkite:mirror-archive-api-metadata:0.0.2'
                 api 'com.lightningkite:koolui-metadata:0.0.2'
             }
         }
@@ -138,6 +139,7 @@ kotlin {
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
                 api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-jvmvirtual:0.0.2'
             }
         }
@@ -171,6 +173,7 @@ kotlin {
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
                 api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-javafx:0.0.2'
             }
         }
@@ -199,6 +202,7 @@ kotlin {
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
                 api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-android:0.0.2'
             }
         }
@@ -220,6 +224,7 @@ kotlin {
                 api 'com.lightningkite:reacktive-js:0.0.2'
                 api 'com.lightningkite:recktangle-js:0.0.2'
                 api 'com.lightningkite:mirror-runtime-js:0.0.2'
+                api 'com.lightningkite:mirror-archive-api-js:0.0.2'
                 api 'com.lightningkite:koolui-js:0.0.2'
 
             }
