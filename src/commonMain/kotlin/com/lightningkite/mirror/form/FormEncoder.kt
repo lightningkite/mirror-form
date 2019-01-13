@@ -52,6 +52,8 @@ class FormEncoder(
             showHidden = showHidden,
             startContext = startContext
     ) {
+        override val detailOnClick: Boolean get() = false
+
         @Suppress("UNCHECKED_CAST")
         fun <T> data(
                 keyAddition: String = "",
@@ -74,18 +76,18 @@ class FormEncoder(
         val obs = data { StandardObservableProperty(value) }
         view = with(factory) {
             @Suppress("UNCHECKED_CAST")
-            card(swap(obs.transform { build(viewEncoder, it, type as Type<Any?>) to Animation.None })).clickable {
+            card(swap(obs.transform { build(viewEncoder, it, type as Type<Any?>).clickable {
                 stack.push(FormVG(
                         formEncoder = this@FormEncoder,
                         stack = stack,
                         value = obs.value,
-                        type = type as Type<Any?>,
+                        type = type,
                         onComplete = {
                             obs.value = it
                             stack.popFrom(this@FormVG)
                         }
                 ))
-            }
+            } to Animation.None }))
         }
         dump = {
             if (type.nullable || obs.value != null) {
@@ -469,6 +471,106 @@ class FormEncoder(
                                             type = elementType as Type<Any?>,
                                             onComplete = {
                                                 elements.add(it)
+                                                stack.popFrom(this@FormVG)
+                                            }
+                                    ))
+                                    Unit
+                                }
+                        )
+                    }
+                }
+                dump = { elements }
+            }
+        }
+
+        addEncoder(Map::class) { type ->
+            if (type.nullable) return@addEncoder null
+            val keyType = type.param(0).type
+            val keyCoder = viewEncoder.rawEncoder(keyType)
+            val valueType = type.param(1).type
+            val valueCoder = viewEncoder.rawEncoder(valueType)
+
+            return@addEncoder label@ fun Builder<Any?>.(value: Map<*, *>?) {
+                if (context.size != ViewSize.Full) {
+                    buttonToFullEdit(this, value, type)
+                    return
+                }
+
+                val elements = data { (value?.entries?.map { it.key to it.value } ?: listOf()).toMutableList().asObservableList() }
+
+                val builderCopy = this.copy()
+                builderCopy.contexts.add(context.copy(size = context.size.shrink()))
+
+                view = with(factory) {
+                    vertical {
+                        +list(
+                                data = elements,
+                                makeView = { obs ->
+                                    horizontal {
+                                        +vertical {
+                                            -swap(obs.transform {
+                                                keyCoder.invoke(builderCopy, it.first)
+                                                builderCopy.view to Animation.None
+                                            }).clickable {
+                                                val index = elements.indexOf(obs.value)
+                                                @Suppress("UNCHECKED_CAST")
+                                                stack.push(FormVG(
+                                                        formEncoder = this@FormEncoder,
+                                                        stack = stack,
+                                                        value = obs.value.first,
+                                                        type = keyType as Type<Any?>,
+                                                        onComplete = {
+                                                            elements[index] = it to obs.value.second
+                                                            stack.popFrom(this@FormVG)
+                                                        }
+                                                ))
+                                            }
+                                            -swap(obs.transform {
+                                                valueCoder.invoke(builderCopy, it.second)
+                                                builderCopy.view to Animation.None
+                                            }).clickable {
+                                                val index = elements.indexOf(obs.value)
+                                                @Suppress("UNCHECKED_CAST")
+                                                stack.push(FormVG(
+                                                        formEncoder = this@FormEncoder,
+                                                        stack = stack,
+                                                        value = obs.value.second,
+                                                        type = valueType as Type<Any?>,
+                                                        onComplete = {
+                                                            elements[index] = obs.value.first to it
+                                                            stack.popFrom(this@FormVG)
+                                                        }
+                                                ))
+                                            }
+                                        }
+                                        -imageButton(
+                                                image = MaterialIcon.delete.color(colorSet.foreground).asImage(),
+                                                label = "Delete",
+                                                onClick = {
+                                                    launchConfirmationDialog(
+                                                            message = "Are you sure you want to delete ${obs.value}?"
+                                                    ) {
+                                                        elements.remove(obs.value)
+                                                    }
+                                                }
+                                        )
+                                    }
+                                }
+                        )
+                        -button(
+                                label = "Add",
+                                onClick = {
+                                    @Suppress("UNCHECKED_CAST")
+                                    stack.push(FormVG(
+                                            formEncoder = this@FormEncoder,
+                                            stack = stack,
+                                            value = null,
+                                            type = Pair::class.type.copy(typeParameters = listOf(
+                                                    TypeProjection(keyType),
+                                                    TypeProjection(valueType)
+                                            )) as Type<Any?>,
+                                            onComplete = {
+                                                elements.add(it as Pair<Any?, Any?>)
                                                 stack.popFrom(this@FormVG)
                                             }
                                     ))

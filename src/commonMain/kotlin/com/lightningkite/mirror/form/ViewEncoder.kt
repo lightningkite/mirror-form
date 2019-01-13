@@ -42,6 +42,7 @@ class ViewEncoder(
     ) : ViewContextStack {
         override val contexts = ArrayList<ViewContext>().also { it.add(startContext) }
         override val context get() = contexts.last()
+        open val detailOnClick: Boolean get() = true
 
         var view: VIEW? = null
         fun outputText(text: String) {
@@ -186,14 +187,10 @@ class ViewEncoder(
             val valueType = type.param(1).type
             val keyEncoder = rawEncoder(keyType)
             val valueEncoder = rawEncoder(valueType)
-            val entryClassInfo = registry.classInfoRegistry[SuspendMap.Entry::class]!!
-            val keyField = entryClassInfo.fields.find { it.name == "key" }!!
-            val valueField = entryClassInfo.fields.find { it.name == "value" }!!
 
             return@addEncoder label@{ value ->
                 view = factory.vertical {
-                    forField(
-                            fieldInfo = keyField,
+                    useContext(
                             owner = value,
                             size = ViewSize.Footnote,
                             importance = .3f
@@ -201,8 +198,7 @@ class ViewEncoder(
                         keyEncoder.invoke(this@label, value!!.key)
                         -view
                     }
-                    forField(
-                            fieldInfo = valueField,
+                    useContext(
                             owner = value,
                             importance = .7f
                     ) {
@@ -219,14 +215,10 @@ class ViewEncoder(
             val valueType = type.param(1).type
             val keyEncoder = rawEncoder(keyType)
             val valueEncoder = rawEncoder(valueType)
-            val entryClassInfo = registry.classInfoRegistry[SuspendMap.Entry::class]!!
-            val keyField = entryClassInfo.fields.find { it.name == "key" }!!
-            val valueField = entryClassInfo.fields.find { it.name == "value" }!!
 
             return@addEncoder label@{ value ->
                 view = factory.vertical {
-                    forField(
-                            fieldInfo = keyField,
+                    useContext(
                             owner = value,
                             size = ViewSize.Footnote,
                             importance = .3f
@@ -234,8 +226,7 @@ class ViewEncoder(
                         keyEncoder.invoke(this@label, value!!.key)
                         -view
                     }
-                    forField(
-                            fieldInfo = valueField,
+                    useContext(
                             owner = value,
                             importance = .7f
                     ) {
@@ -456,24 +447,32 @@ class ViewEncoder(
                                             -out.view
                                         }
                                     }
-                                }.clickable {
-                                    @Suppress("UNCHECKED_CAST")
-                                    stack.push(DisplayVG(
-                                            formEncoder = this@ViewEncoder,
-                                            stack = stack,
-                                            value = value,
-                                            type = type as Type<Any?>
-                                    ))
+                                }.let {
+                                    if (detailOnClick) {
+                                        it.clickable {
+                                            @Suppress("UNCHECKED_CAST")
+                                            stack.push(DisplayVG(
+                                                    formEncoder = this@ViewEncoder,
+                                                    stack = stack,
+                                                    value = value,
+                                                    type = type as Type<Any?>
+                                            ))
+                                        }
+                                    } else it
                                 }
                             }
-                            ViewSize.Footnote -> outputText(value.toString()).clickable {
-                                @Suppress("UNCHECKED_CAST")
-                                stack.push(DisplayVG(
-                                        formEncoder = this@ViewEncoder,
-                                        stack = stack,
-                                        value = value,
-                                        type = type as Type<Any?>
-                                ))
+                            ViewSize.Footnote -> outputText(value.toString()).let {
+                                if (detailOnClick) {
+                                    it.clickable {
+                                        @Suppress("UNCHECKED_CAST")
+                                        stack.push(DisplayVG(
+                                                formEncoder = this@ViewEncoder,
+                                                stack = stack,
+                                                value = value,
+                                                type = type as Type<Any?>
+                                        ))
+                                    }
+                                } else it
                             }
                         }
                     }

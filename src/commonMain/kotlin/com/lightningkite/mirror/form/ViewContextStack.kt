@@ -10,6 +10,17 @@ interface ViewContextStack {
         action()
         contexts.removeAt(contexts.lastIndex)
     }
+    fun useContext(
+            fieldInfo: FieldInfo<*, *>? = null,
+            owner: Any? = null,
+            size: ViewSize = ViewSize.Full,
+            importance: Float = fieldInfo?.importance ?: .5f,
+            action: () -> Unit
+    ) {
+        contexts.add(ViewContext(fieldInfo, owner, size, importance))
+        action()
+        contexts.removeAt(contexts.lastIndex)
+    }
     fun forField(
             owner: Any?,
             fieldInfo: FieldInfo<*, *>,
