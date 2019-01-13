@@ -44,32 +44,42 @@ class FormEncoder(
             factory: ViewFactory<VIEW>,
             stack: MutableObservableList<ViewGenerator<ViewFactory<VIEW>, VIEW>> = StandardObservableList(),
             showHidden: Boolean = false,
-            startContext: ViewContext = ViewContext()
+            startContext: ViewContext = ViewContext(),
+            val dataRepository: HashMap<String, Any?> = HashMap()
     ) : ViewEncoder.Builder<VIEW>(
             factory = factory,
             stack = stack,
             showHidden = showHidden,
             startContext = startContext
     ) {
+        @Suppress("UNCHECKED_CAST")
+        fun <T> data(
+                keyAddition: String = "",
+                make: () -> T
+        ): T = dataRepository.getOrPut(contexts.joinToString(".") {
+            it.fieldInfo?.name ?: "_"
+        } + keyAddition, make) as T
+
         var dump: () -> Any? = { Unit }
         fun copy() = Builder(
                 factory = factory,
                 stack = stack,
                 showHidden = showHidden,
-                startContext = context
+                startContext = context,
+                dataRepository = dataRepository
         )
     }
 
     fun buttonToFullEdit(builder: Builder<Any?>, value: Any?, type: Type<*>) = with(builder) {
-        val obs = StandardObservableProperty(value)
+        val obs = data { StandardObservableProperty(value) }
         view = with(factory) {
             @Suppress("UNCHECKED_CAST")
-            card(build(viewEncoder, value, type as Type<Any?>)).clickable {
+            card(swap(obs.transform { build(viewEncoder, it, type as Type<Any?>) to Animation.None })).clickable {
                 stack.push(FormVG(
                         formEncoder = this@FormEncoder,
                         stack = stack,
                         value = obs.value,
-                        type = type,
+                        type = type as Type<Any?>,
                         onComplete = {
                             obs.value = it
                             stack.popFrom(this@FormVG)
@@ -77,7 +87,13 @@ class FormEncoder(
                 ))
             }
         }
-        dump = { obs.value }
+        dump = {
+            if (type.nullable || obs.value != null) {
+                obs.value
+            } else {
+                throw IncompleteException("${builder.context.fieldInfo?.name?.humanify() ?: ""} must be filled out.")
+            }
+        }
     }
 
     class Output<VIEW, VALUE>(
@@ -86,12 +102,13 @@ class FormEncoder(
     )
 
     fun <VIEW, VALUE> write(
+            dataRepository: HashMap<String, Any?>,
             factory: ViewFactory<VIEW>,
             stack: MutableObservableList<ViewGenerator<ViewFactory<VIEW>, VIEW>>,
             type: Type<VALUE>,
             value: VALUE
     ): Output<VIEW, VALUE> {
-        val builder: Builder<VIEW> = Builder(factory, stack)
+        val builder: Builder<VIEW> = Builder(factory, stack, dataRepository = dataRepository)
         val builderRef = builder
         @Suppress("UNCHECKED_CAST")
         encode(builderRef as Builder<Any?>, value, type)
@@ -99,18 +116,26 @@ class FormEncoder(
         return Output(view = builder.view!!, dump = builder.dump as () -> VALUE)
     }
 
+
+    class IncompleteException(message: String) : Exception(message)
+
+    fun <T> addCanBeNullEncoder(type: Type<T>, action: TypeEncoder<Builder<Any?>, T?>) {
+        @Suppress("UNCHECKED_CAST")
+        encoders[type] = action as Builder<Any?>.(value: Any?) -> Unit
+    }
+
     init {
-        addEncoder(Unit::class.type) { value ->
+        addCanBeNullEncoder(Unit::class.type) { value ->
             view = factory.text(text = "<nothing>")
             dump = {}
         }
-        addEncoder(Boolean::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Boolean::class.type) { value ->
+            val observable = data { StandardObservableProperty(value ?: false) }
             view = factory.toggle(observable)
             dump = { observable.value }
         }
-        addEncoder(Char::class.type) { value ->
-            val observable = StandardObservableProperty(value.toString())
+        addCanBeNullEncoder(Char::class.type) { value ->
+            val observable = data { StandardObservableProperty(value.toString()) }
             view = factory.textField(
                     text = observable,
                     placeholder = value.toString(),
@@ -124,8 +149,8 @@ class FormEncoder(
                 }
             }
         }
-        addEncoder(String::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(String::class.type) { value ->
+            val observable = data { StandardObservableProperty(value ?: "") }
             val context = context
             val field = context.fieldInfo
             val subtype = field?.annotations?.find { it.name.endsWith("Subtype") }?.arguments?.firstOrNull()?.let { it as? String }?.toLowerCase()
@@ -142,7 +167,7 @@ class FormEncoder(
                     }
             view = factory.textField(
                     text = observable,
-                    placeholder = value,
+                    placeholder = value ?: "",
                     type = when (subtype) {
                         "password" -> TextInputType.Password
                         "email" -> TextInputType.Email
@@ -156,8 +181,9 @@ class FormEncoder(
             )
             dump = { observable.value }
         }
-        addEncoder(Byte::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Byte::class.type) { valueNullable ->
+            val value = valueNullable ?: 0
+            val observable = data { StandardObservableProperty(value) }
             view = factory.numberField(
                     value = TransformMutableObservableProperty(
                             observable = observable,
@@ -170,8 +196,9 @@ class FormEncoder(
             )
             dump = { observable.value }
         }
-        addEncoder(Short::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Short::class.type) { valueNullable ->
+            val value = valueNullable ?: 0
+            val observable = data { StandardObservableProperty(value) }
             view = factory.numberField(
                     value = TransformMutableObservableProperty(
                             observable = observable,
@@ -184,8 +211,9 @@ class FormEncoder(
             )
             dump = { observable.value }
         }
-        addEncoder(Int::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Int::class.type) { valueNullable ->
+            val value = valueNullable ?: 0
+            val observable = data { StandardObservableProperty(value) }
             view = factory.numberField(
                     value = TransformMutableObservableProperty(
                             observable = observable,
@@ -198,8 +226,9 @@ class FormEncoder(
             )
             dump = { observable.value }
         }
-        addEncoder(Long::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Long::class.type) { valueNullable ->
+            val value = valueNullable ?: 0
+            val observable = data { StandardObservableProperty(value) }
             view = factory.numberField(
                     value = TransformMutableObservableProperty(
                             observable = observable,
@@ -212,8 +241,9 @@ class FormEncoder(
             )
             dump = { observable.value }
         }
-        addEncoder(Float::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Float::class.type) { valueNullable ->
+            val value = valueNullable ?: 0f
+            val observable = data { StandardObservableProperty(value) }
             view = factory.numberField(
                     value = TransformMutableObservableProperty(
                             observable = observable,
@@ -226,8 +256,9 @@ class FormEncoder(
             )
             dump = { observable.value }
         }
-        addEncoder(Double::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Double::class.type) { valueNullable ->
+            val value = valueNullable ?: 0.0
+            val observable = data { StandardObservableProperty(value) }
             view = factory.numberField(
                     value = TransformMutableObservableProperty(
                             observable = observable,
@@ -243,23 +274,23 @@ class FormEncoder(
 
         initializeEncoders()
 
-        addEncoder(Date::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Date::class.type) { value ->
+            val observable = data { StandardObservableProperty(value ?: TimeStamp.now().date()) }
             view = factory.datePicker(observable)
             dump = { observable.value }
         }
-        addEncoder(Time::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(Time::class.type) { value ->
+            val observable = data { StandardObservableProperty(value ?: TimeStamp.now().time()) }
             view = factory.timePicker(observable)
             dump = { observable.value }
         }
-        addEncoder(DateTime::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(DateTime::class.type) { value ->
+            val observable = data { StandardObservableProperty(value ?: TimeStamp.now().dateTime()) }
             view = factory.dateTimePicker(observable)
             dump = { observable.value }
         }
-        addEncoder(TimeStamp::class.type) { value ->
-            val observable = StandardObservableProperty(value)
+        addCanBeNullEncoder(TimeStamp::class.type) { value ->
+            val observable = data { StandardObservableProperty(value ?: TimeStamp.now()) }
             view = factory.dateTimePicker(TransformMutableObservableProperty(
                     observable = observable,
                     transformer = { it: TimeStamp -> it.dateTime() },
@@ -275,8 +306,9 @@ class FormEncoder(
             if (type.nullable) {
                 options.add(null)
             }
-            return@addEncoder { value ->
-                val observable = StandardObservableProperty(value?.let { registry.classInfoRegistry[it] })
+            return@addEncoder { nullableValue ->
+                val value = if (type.nullable) nullableValue else nullableValue ?: options.first()!!.kClass
+                val observable = data { StandardObservableProperty(value?.let { registry.classInfoRegistry[it] }) }
                 view = factory.picker(
                         options = WrapperObservableList(options),
                         selected = observable,
@@ -291,8 +323,9 @@ class FormEncoder(
             if (type.nullable) {
                 options.add(null)
             }
-            return@addEncoder { value ->
-                val observable = StandardObservableProperty(value)
+            return@addEncoder { nullableValue ->
+                val value = if (type.nullable) nullableValue else nullableValue ?: options.first()
+                val observable = data { StandardObservableProperty(value) }
                 view = factory.picker(
                         options = WrapperObservableList(options),
                         selected = observable,
@@ -311,8 +344,9 @@ class FormEncoder(
             if (type.nullable) {
                 options.add(null)
             }
-            return@addEncoder fun FormEncoder.Builder<Any?>.(value: FieldInfo<*, *>?) {
-                val observable = StandardObservableProperty(value)
+            return@addEncoder fun FormEncoder.Builder<Any?>.(nullableValue: FieldInfo<*, *>?) {
+                val value = if (type.nullable) nullableValue else nullableValue ?: options.first()
+                val observable = data { StandardObservableProperty(value) }
                 view = factory.picker(
                         options = WrapperObservableList(options),
                         selected = observable,
@@ -344,7 +378,7 @@ class FormEncoder(
                     return
                 }
 
-                val elements = value!!.toMutableList().asObservableList()
+                val elements = data { (value ?: listOf<Any?>()).toMutableList().asObservableList() }
 
                 val builderCopy = this.copy()
                 builderCopy.contexts.add(context.copy(size = context.size.shrink()))
@@ -385,7 +419,7 @@ class FormEncoder(
                                                                         stack.push(FormVG(
                                                                                 formEncoder = this@FormEncoder,
                                                                                 stack = stack,
-                                                                                value = registry.classInfoRegistry[elementType.kClass]!!.constructDefault(),
+                                                                                value = null,
                                                                                 type = elementType as Type<Any?>,
                                                                                 onComplete = {
                                                                                     elements.add(index, it)
@@ -431,7 +465,7 @@ class FormEncoder(
                                     stack.push(FormVG(
                                             formEncoder = this@FormEncoder,
                                             stack = stack,
-                                            value = registry.classInfoRegistry[elementType.kClass]!!.constructDefault(),
+                                            value = null,
                                             type = elementType as Type<Any?>,
                                             onComplete = {
                                                 elements.add(it)
@@ -458,13 +492,21 @@ class FormEncoder(
             if (suspendMap != null) {
                 return@addEncoder { value ->
                     val isWorking = StandardObservableProperty(false)
-                    val valuePair = StandardObservableProperty<Pair<Any?, Any?>>(value?.key to null)
+                    val valuePair = data { StandardObservableProperty<Pair<Any?, Any?>>(value?.key to null) }
                     view = factory.work(factory.button(
                             label = valuePair.transform { it.second?.toString() ?: it.first?.toString() ?: "None" },
                             onClick = {
                                 //Open up the selector VC
                             }
                     ), isWorking)
+                    dump = {
+                        val key = valuePair.value.first
+                        if (keyType.nullable || key != null) {
+                            Reference<Any?, Any>(valuePair.value.first)
+                        } else {
+                            throw IncompleteException("${context.fieldInfo?.name?.humanify()} cannot be empty.  Please select a reference.")
+                        }
+                    }
                 }
             } else {
                 val base = rawEncoder(valueType.copy(nullable = valueType.nullable || type.nullable))
@@ -486,7 +528,7 @@ class FormEncoder(
                 val enumValues = classInfo.enumValues ?: return null
 
                 return { value ->
-                    val observable = StandardObservableProperty(value as Any)
+                    val observable = data { StandardObservableProperty(value ?: enumValues.first()) }
                     view = factory.picker(
                             options = WrapperObservableList(enumValues.toMutableList()),
                             selected = observable,
@@ -507,7 +549,7 @@ class FormEncoder(
                 val underlyingCoder = rawEncoder(type.copy(nullable = false))
 
                 return { value ->
-                    val isNull = StandardObservableProperty(value == null)
+                    val isNull = data(".null") { StandardObservableProperty(value == null) }
                     var underlyingDump: () -> Any? = { null }
                     view = factory.swap(
                             view = isNull.transform {
@@ -538,11 +580,17 @@ class FormEncoder(
 
             override fun generateEncoder(type: Type<*>): TypeEncoder<Builder<Any?>, Any?>? {
                 val classInfo = registry.classInfoRegistry[type.kClass] ?: return null
+                val default = try {
+                    classInfo.constructDefault()
+                } catch (e: Exception) {
+                    null
+                }
                 val lazySubCoders by lazy {
                     (registry.classInfoRegistry[type.kClass]
-                            ?: throw IllegalArgumentException("KClass ${type.kClass} not registered.")).fieldsToRender().associateWith { rawEncoder(it.type as Type<*>) }
+                            ?: throw IllegalArgumentException("KClass ${type.kClass} not registered.")).fieldsToRender(default == null).associateWith { rawEncoder(it.type as Type<*>) }
                 }
                 return label@{ value ->
+
                     if (context.size != ViewSize.Full) {
                         buttonToFullEdit(this, value, type)
                         return@label
@@ -554,7 +602,7 @@ class FormEncoder(
                     //Add default dumps because of hidden fields
                     (registry.classInfoRegistry[type.kClass]
                             ?: throw IllegalArgumentException("KClass ${type.kClass} not registered.")).fields.forEach {
-                        dumps[it.name] = { it.get.untyped(value!!) }
+                        dumps[it.name] = { it.get.untyped(value ?: default!!) }
                     }
 
                     view = with(factory) {
@@ -562,7 +610,7 @@ class FormEncoder(
                             -text(text = classInfo.localName.humanify(), size = TextSize.Subheader)
                             for ((field, coder) in lazySubCoders) {
                                 out.forField(owner = value, fieldInfo = field) {
-                                    coder.invoke(out, field.get.untyped(value!!))
+                                    coder.invoke(out, value?.let { field.get.untyped(it) })
                                     dumps[field.name] = out.dump
                                     -entryContext(
                                             label = field.name.humanify(),
@@ -578,9 +626,7 @@ class FormEncoder(
                         }
                     }
                     dump = {
-                        println("Dumping...")
                         val m = dumps.mapValues { it.value.invoke() }
-                        println("Constructing with $m")
                         classInfo.construct(m)
                     }
                 }
@@ -603,7 +649,7 @@ class FormEncoder(
 
                 return { value ->
                     var underlyingDump: () -> Any? = { null }
-                    val typeObs = StandardObservableProperty(if (value == null) null else registry.classInfoRegistry[value::class])
+                    val typeObs = data(".polymorphic") { StandardObservableProperty(if (value == null) null else registry.classInfoRegistry[value::class]) }
                     view = factory.swap(
                             view = typeObs.transform { classInfo ->
                                 factory.vertical {

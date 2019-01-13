@@ -1,62 +1,61 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.koolui.builders.imageButton
+import com.lightningkite.koolui.builders.launchInfoDialog
 import com.lightningkite.koolui.color.Color
-import com.lightningkite.koolui.concepts.TabItem
+import com.lightningkite.koolui.concepts.Importance
+import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.asImage
 import com.lightningkite.koolui.image.color
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.info.Type
 import com.lightningkite.reacktive.list.MutableObservableList
-import com.lightningkite.reacktive.list.ObservableList
-import com.lightningkite.reacktive.list.observableListOf
-import com.lightningkite.reacktive.property.StandardObservableProperty
-import com.lightningkite.reacktive.property.lifecycle.openCloseBinding
 
 class FormVG<VIEW, V>(
         val formEncoder: FormEncoder,
         val stack: MutableObservableList<ViewGenerator<ViewFactory<VIEW>, VIEW>>,
-        value: V,
+        val value: V,
         val type: Type<V>,
         val onComplete:FormVG<VIEW, V>.(V)->Unit
 ) : ViewGenerator<ViewFactory<VIEW>, VIEW> {
 
-    val valueObs = StandardObservableProperty(value)
-
-    val doneAction = TabItem(
-            image = com.lightningkite.koolui.image.MaterialIcon.check.color(Color.white).asImage(),
-            text = "Done",
-            description = "Finish editing."
-    )
+    val dataRepository = HashMap<String, Any?>()
 
     var formDump = { value }
 
-    override val actions: ObservableList<Pair<TabItem, suspend () -> Unit>> = observableListOf(
-            doneAction to suspend {
-                onComplete(formDump())
-            }
-    )
     override val title: String = formEncoder.registry.kClassToExternalNameRegistry[type.kClass]!!.humanify()
 
     override fun generate(dependency: ViewFactory<VIEW>): VIEW {
         val result = formEncoder.write(
+                dataRepository = dataRepository,
                 factory = dependency,
                 stack = stack,
                 type = type,
-                value = valueObs.value
+                value = value
         )
-        val dump = result.dump
-
-        with(dependency){
-            result.view.lifecycle.openCloseBinding(
-                    onOpen = {},
-                    onClose = {
-                        valueObs.value = dump()
-                    }
-            )
-        }
         formDump = result.dump
         return result.view
+    }
+
+    override fun generateActions(dependency: ViewFactory<VIEW>): VIEW? = with(dependency) {
+        imageButton(
+                image = MaterialIcon.check.color(Color.white).asImage(),
+                label = "Done",
+                importance = Importance.Low,
+                onClick = {
+                    try {
+                        val result = formDump()
+                        println("Result: $result")
+                        onComplete(result)
+                    } catch(e:FormEncoder.IncompleteException) {
+                        launchInfoDialog(
+                                title = "Form Error",
+                                message = e.message ?: ""
+                        )
+                    }
+                }
+        )
     }
 }
 

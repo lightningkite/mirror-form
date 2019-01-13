@@ -1,5 +1,6 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.kommon.collection.push
 import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.space
 import com.lightningkite.koolui.builders.text
@@ -373,6 +374,11 @@ class ViewEncoder(
                 return label@{ value ->
                     val out = this
 
+                    if(value == null){
+                        outputText("Fill in a " + registry.kClassToExternalNameRegistry[classInfo.kClass]!!.humanify())
+                        return@label
+                    }
+
                     if (classInfo.fields.isEmpty()) {
                         outputText(registry.kClassToExternalNameRegistry[classInfo.kClass]!!.humanify())
                         return@label
@@ -418,11 +424,12 @@ class ViewEncoder(
                                         importantFields.forEach { field ->
                                             out.forField(
                                                     fieldInfo = field,
-                                                    owner = value
+                                                    owner = value,
+                                                    importance = (field.importance - oldImportanceRange.start) / (oldImportanceRange.endInclusive - oldImportanceRange.start)
                                             ) {
                                                 val coder = lazySubCoders[field]!!
                                                 if (context.fieldInfo?.needsNoContext == true) {
-                                                    coder.invoke(out, field.get.untyped(value!!))
+                                                    coder.invoke(out, field.get.untyped(value))
                                                     -out.view
                                                 } else {
                                                     -horizontal {
@@ -431,7 +438,7 @@ class ViewEncoder(
                                                                 ?.arguments
                                                                 ?.firstOrNull() as? String
                                                                 ?: field.name.humanify())
-                                                        coder.invoke(out, field.get.untyped(value!!))
+                                                        coder.invoke(out, field.get.untyped(value))
                                                         -out.view
                                                     }
                                                 }
@@ -445,13 +452,29 @@ class ViewEncoder(
                                                 owner = value,
                                                 size = context.size.shrink()
                                         )) {
-                                            lazySubCoders[defaultSort.field]!!.invoke(out, defaultSort.field.get.untyped(value!!))
+                                            lazySubCoders[defaultSort.field]!!.invoke(out, defaultSort.field.get.untyped(value))
                                             -out.view
                                         }
                                     }
+                                }.clickable {
+                                    @Suppress("UNCHECKED_CAST")
+                                    stack.push(DisplayVG(
+                                            formEncoder = this@ViewEncoder,
+                                            stack = stack,
+                                            value = value,
+                                            type = type as Type<Any?>
+                                    ))
                                 }
                             }
-                            ViewSize.Footnote -> outputText(value?.toString() ?: "None")
+                            ViewSize.Footnote -> outputText(value.toString()).clickable {
+                                @Suppress("UNCHECKED_CAST")
+                                stack.push(DisplayVG(
+                                        formEncoder = this@ViewEncoder,
+                                        stack = stack,
+                                        value = value,
+                                        type = type as Type<Any?>
+                                ))
+                            }
                         }
                     }
                     //End view output
