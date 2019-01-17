@@ -13,6 +13,7 @@ import com.lightningkite.koolui.image.color
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.*
+import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.SuspendMapRegistry
 import com.lightningkite.mirror.archive.model.Reference
 import com.lightningkite.mirror.info.*
