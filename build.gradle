@@ -50,27 +50,6 @@ android {
     }
 }
 
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publish = true
-    pkg {
-        repo = project.group.toString()
-        name = project.name
-        userOrg = "lightningkite"
-        licenses = ["MIT"]
-        def github = "https://github.com/lightningkite/${project.name}"
-        vcsUrl = github
-        websiteUrl = github
-        issueTrackerUrl = github + "/issues"
-        version {
-            name = project.version
-            released = new Date()
-        }
-    }
-}
-
-
 repositories {
     google()
     jcenter()
@@ -104,7 +83,7 @@ kotlin {
                 api 'com.lightningkite:lokalize-metadata:0.0.2'
                 api 'com.lightningkite:reacktive-metadata:0.0.2'
                 api 'com.lightningkite:recktangle-metadata:0.0.2'
-                api 'com.lightningkite:mirror-runtime-metadata:0.0.2'
+                api "com.lightningkite:mirror-runtime-metadata:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-metadata:0.0.2'
                 api 'com.lightningkite:koolui-metadata:0.0.2'
             }
@@ -127,7 +106,7 @@ kotlin {
                 api 'com.lightningkite:lokalize-jvm:0.0.2'
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
-                api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api "com.lightningkite:mirror-runtime-jvm:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-jvmvirtual:0.0.2'
             }
@@ -161,7 +140,7 @@ kotlin {
                 api 'com.lightningkite:lokalize-jvm:0.0.2'
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
-                api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api "com.lightningkite:mirror-runtime-jvm:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-javafx:0.0.2'
             }
@@ -190,7 +169,7 @@ kotlin {
                 api 'com.lightningkite:lokalize-jvm:0.0.2'
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
-                api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api "com.lightningkite:mirror-runtime-jvm:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-android:0.0.2'
             }
@@ -212,7 +191,7 @@ kotlin {
                 api 'com.lightningkite:lokalize-js:0.0.2'
                 api 'com.lightningkite:reacktive-js:0.0.2'
                 api 'com.lightningkite:recktangle-js:0.0.2'
-                api 'com.lightningkite:mirror-runtime-js:0.0.2'
+                api "com.lightningkite:mirror-runtime-js:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-js:0.0.2'
                 api 'com.lightningkite:koolui-js:0.0.2'
 
