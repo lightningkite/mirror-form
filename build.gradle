@@ -1,6 +1,6 @@
 buildscript {
     ext.kotlinVersion = '1.3.20'
-    ext.coroutinesVersion = '1.1.0'
+    ext.coroutinesVersion = '1.0.1'
     repositories {
         google()
         mavenLocal()
@@ -23,17 +23,6 @@ apply plugin: 'digital.wup.android-maven-publish'
 task androidSourceJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier "sources"
-}
-
-publishing {
-    publications {
-        mavenAar(MavenPublication) {
-            artifactId = project.name + "-android"
-            from components.android
-            artifacts.removeAll { it.file.name.endsWith('jar') }
-            artifact androidSourceJar
-        }
-    }
 }
 
 android {
@@ -61,27 +50,6 @@ android {
     }
 }
 
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publish = true
-    pkg {
-        repo = project.group.toString()
-        name = project.name
-        userOrg = "lightningkite"
-        licenses = ["MIT"]
-        def github = "https://github.com/lightningkite/${project.name}"
-        vcsUrl = github
-        websiteUrl = github
-        issueTrackerUrl = github + "/issues"
-        version {
-            name = project.version
-            released = new Date()
-        }
-    }
-}
-
-
 repositories {
     google()
     jcenter()
@@ -108,14 +76,14 @@ kotlin {
             dependencies {
                 api 'org.jetbrains.kotlin:kotlin-stdlib-common'
 
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.1.0"
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.0.1"
 
                 api 'com.lightningkite:kommon-metadata:0.0.2'
                 api 'com.lightningkite:kommunicate-metadata:0.0.2'
                 api 'com.lightningkite:lokalize-metadata:0.0.2'
                 api 'com.lightningkite:reacktive-metadata:0.0.2'
                 api 'com.lightningkite:recktangle-metadata:0.0.2'
-                api 'com.lightningkite:mirror-runtime-metadata:0.0.2'
+                api "com.lightningkite:mirror-runtime-metadata:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-metadata:0.0.2'
                 api 'com.lightningkite:koolui-metadata:0.0.2'
             }
@@ -131,14 +99,14 @@ kotlin {
                 api 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 
                 api 'com.squareup.okhttp3:okhttp:3.11.0'
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0"
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1"
 
                 api 'com.lightningkite:kommon-jvm:0.0.2'
                 api 'com.lightningkite:kommunicate-jvm:0.0.2'
                 api 'com.lightningkite:lokalize-jvm:0.0.2'
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
-                api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api "com.lightningkite:mirror-runtime-jvm:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-jvmvirtual:0.0.2'
             }
@@ -165,14 +133,14 @@ kotlin {
                 api 'org.apache.logging.log4j:log4j-core:2.5'
 
                 api 'com.squareup.okhttp3:okhttp:3.11.0'
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0"
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1"
 
                 api 'com.lightningkite:kommon-jvm:0.0.2'
                 api 'com.lightningkite:kommunicate-jvm:0.0.2'
                 api 'com.lightningkite:lokalize-jvm:0.0.2'
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
-                api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api "com.lightningkite:mirror-runtime-jvm:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-javafx:0.0.2'
             }
@@ -186,7 +154,7 @@ kotlin {
         androidMain {
             dependencies {
                 api 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.1.0"
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.0.1"
                 api 'com.squareup.okhttp3:okhttp:3.11.0'
 
                 def compatVersion = '27.1.1'
@@ -201,7 +169,7 @@ kotlin {
                 api 'com.lightningkite:lokalize-jvm:0.0.2'
                 api 'com.lightningkite:reacktive-jvm:0.0.2'
                 api 'com.lightningkite:recktangle-jvm:0.0.2'
-                api 'com.lightningkite:mirror-runtime-jvm:0.0.2'
+                api "com.lightningkite:mirror-runtime-jvm:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-jvm:0.0.2'
                 api 'com.lightningkite:koolui-android:0.0.2'
             }
@@ -216,14 +184,14 @@ kotlin {
             dependencies {
                 api 'org.jetbrains.kotlin:kotlin-stdlib-js'
 
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.1.0"
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.0.1"
 
                 api 'com.lightningkite:kommon-js:0.0.2'
                 api 'com.lightningkite:kommunicate-js:0.0.2'
                 api 'com.lightningkite:lokalize-js:0.0.2'
                 api 'com.lightningkite:reacktive-js:0.0.2'
                 api 'com.lightningkite:recktangle-js:0.0.2'
-                api 'com.lightningkite:mirror-runtime-js:0.0.2'
+                api "com.lightningkite:mirror-runtime-js:${versionsProperties.mirror}"
                 api 'com.lightningkite:mirror-archive-api-js:0.0.2'
                 api 'com.lightningkite:koolui-js:0.0.2'
 
@@ -242,7 +210,7 @@ kotlin {
 //            }
 //            iosTest {
 //                dependencies {
-//                    api 'org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.1.0'
+//                    api 'org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.0.1'
 //                }
 //            }
 //            iosx64Main {
@@ -252,7 +220,7 @@ kotlin {
 //            }
 //            iosx64Test {
 //                dependencies {
-//                    api 'org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.1.0'
+//                    api 'org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.0.1'
 //                    kotlin.srcDir('src/iosTest/kotlin')
 //                }
 //            }

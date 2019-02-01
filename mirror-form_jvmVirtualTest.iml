@@ -5,8 +5,8 @@
       <configuration version="3" platform="JVM 1.6" useProjectSettings="false" isTestModule="true" externalProjectId=":mirror-form">
         <sourceSets>
           <sourceSet>mirror-form_commonMain</sourceSet>
-          <sourceSet>mirror-form_commonTest</sourceSet>
           <sourceSet>mirror-form_jvmVirtualMain</sourceSet>
+          <sourceSet>mirror-form_commonTest</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <compilerSettings />
@@ -76,8 +76,8 @@
     <orderEntry type="library" scope="TEST" name="Gradle: com.lightningkite:kommon-metadata:0.0.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.0.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.20" level="project" />
-    <orderEntry type="module" module-name="mirror-form_jvmVirtualMain" scope="TEST" />
     <orderEntry type="module" module-name="mirror-form_commonTest" scope="TEST" />
+    <orderEntry type="module" module-name="mirror-form_jvmVirtualMain" scope="TEST" />
   </component>
   <component name="TestModuleProperties" production-module="mirror-form_jvmVirtualMain" />
 </module>
