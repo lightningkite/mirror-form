@@ -2,11 +2,11 @@ package com.lightningkite.mirror.form
 
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.concepts.TextSize
-import com.lightningkite.mirror.info.FieldInfo
+import com.lightningkite.mirror.info.MirrorClass
 
 
 data class ViewContext(
-        val fieldInfo: FieldInfo<*, *>? = null,
+        val fieldInfo: MirrorClass.Field<*, *>? = null,
         val owner: Any? = null,
         val size: ViewSize = ViewSize.Full,
         val importance: Float = fieldInfo?.importance ?: .5f
