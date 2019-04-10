@@ -1,10 +1,6 @@
 package com.lightningkite.mirror.form
 
-import com.lightningkite.kommon.collection.push
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.space
 import com.lightningkite.koolui.builders.text
-import com.lightningkite.koolui.builders.vertical
 import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.TextSize
 import com.lightningkite.koolui.views.ViewFactory
@@ -14,7 +10,6 @@ import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.SuspendMap
 import com.lightningkite.mirror.archive.database.SuspendMapRegistry
 import com.lightningkite.mirror.archive.model.Reference
-import com.lightningkite.mirror.info.*
 import com.lightningkite.mirror.request.RequestHandler
 import com.lightningkite.mirror.serialization.Encoder
 import com.lightningkite.mirror.serialization.SerializationRegistry
@@ -193,7 +188,7 @@ class ViewEncoder(
                 view = factory.vertical {
                     useContext(
                             owner = value,
-                            size = ViewSize.Footnote,
+                            size = ViewSize.OneLine,
                             importance = .3f
                     ) {
                         keyEncoder.invoke(this@label, value!!.key)
@@ -221,7 +216,7 @@ class ViewEncoder(
                 view = factory.vertical {
                     useContext(
                             owner = value,
-                            size = ViewSize.Footnote,
+                            size = ViewSize.OneLine,
                             importance = .3f
                     ) {
                         keyEncoder.invoke(this@label, value!!.key)
@@ -275,7 +270,7 @@ class ViewEncoder(
                             }
                         }
                     }
-                    ViewSize.Footnote -> {
+                    ViewSize.OneLine -> {
                         outputText(value!!.entries.joinToString(", ") { it.key.toString() + ": " + it.value.toString() })
                     }
                 }
@@ -315,7 +310,7 @@ class ViewEncoder(
                             }
                         }
                     }
-                    ViewSize.Footnote -> {
+                    ViewSize.OneLine -> {
                         outputText(value!!.joinToString(", ") { it.toString() })
                     }
                 }
