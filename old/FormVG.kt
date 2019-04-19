@@ -89,7 +89,7 @@ class FormVG<VIEW, V>(
 //
 //    fun reloadResults() {
 //        GlobalScope.launch(Dispatchers.UI) {
-//            lastQuery.replace(suspendMap.query(condition = condition.value, sortedBy = sort.value))
+//            lastQuery.replace(suspendMap.query(condition = condition.successfulValue, sortedBy = sort.successfulValue))
 //        }
 //    }
 //
@@ -105,7 +105,7 @@ class FormVG<VIEW, V>(
 //                    makeView = { obs ->
 //                        text(text = obs.transform { it.toString() })
 //                                .clickable {
-//                                    onSelect?.invoke(this@SuspendMapVG, obs.value) ?: run {
+//                                    onSelect?.invoke(this@SuspendMapVG, obs.successfulValue) ?: run {
 //                                        //open edit form
 //                                    }
 //                                }
@@ -115,10 +115,10 @@ class FormVG<VIEW, V>(
 //                                                Unit
 //                                            },
 //                                            "Delete" to {
-//                                                launchConfirmationDialog(message = "Are you sure you want to delete ${obs.value.second}?") {
+//                                                launchConfirmationDialog(message = "Are you sure you want to delete ${obs.successfulValue.second}?") {
 //                                                    GlobalScope.launch(Dispatchers.UI) {
-//                                                        suspendMap.remove(obs.value.first)
-//                                                        lastQuery.remove(obs.value)
+//                                                        suspendMap.remove(obs.successfulValue.first)
+//                                                        lastQuery.remove(obs.successfulValue)
 //                                                    }
 //                                                }
 //                                                Unit

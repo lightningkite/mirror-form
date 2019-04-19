@@ -1,503 +1,149 @@
 package com.lightningkite.mirror.form
 
-import com.lightningkite.koolui.builders.text
+import com.lightningkite.kommon.atomic.AtomicReference
+import com.lightningkite.kommon.collection.SortedBag
+import com.lightningkite.kommon.collection.addSorted
+import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Animation
-import com.lightningkite.koolui.concepts.TextSize
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
-import com.lightningkite.lokalize.*
-import com.lightningkite.lokalize.time.*
-import com.lightningkite.mirror.archive.database.SuspendMap
-import com.lightningkite.mirror.archive.database.SuspendMapRegistry
-import com.lightningkite.mirror.archive.model.Reference
-import com.lightningkite.mirror.request.RequestHandler
-import com.lightningkite.mirror.serialization.Encoder
-import com.lightningkite.mirror.serialization.SerializationRegistry
-import com.lightningkite.mirror.serialization.TypeEncoder
-import com.lightningkite.reacktive.list.MutableObservableList
-import com.lightningkite.reacktive.list.StandardObservableList
-import com.lightningkite.reacktive.property.StandardObservableProperty
+import com.lightningkite.lokalize.DefaultLocale
+import com.lightningkite.lokalize.time.Date
+import com.lightningkite.lokalize.time.DateTime
+import com.lightningkite.lokalize.time.Time
+import com.lightningkite.lokalize.time.TimeStamp
+import com.lightningkite.mirror.archive.model.Uuid
+import com.lightningkite.mirror.archive.model.UuidMirror
+import com.lightningkite.mirror.info.*
+import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.transform
+import kotlinx.serialization.UnionKind
+import mirror.kotlin.PairMirror
 import kotlin.reflect.KClass
 
-class ViewEncoder(
-        override val registry: SerializationRegistry,
-        val suspendMaps: SuspendMapRegistry,
-        val requestHandler: RequestHandler
-) : Encoder<ViewEncoder.Builder<Any?>> {
+object ViewEncoder {
 
-    override val arbitraryEncoders: MutableList<Encoder.Generator<Builder<Any?>>> = ArrayList()
-    override val encoders: MutableMap<Type<*>, TypeEncoder<Builder<Any?>, Any?>> = HashMap()
-    override val kClassEncoders: MutableMap<KClass<*>, (Type<*>) -> TypeEncoder<Builder<Any?>, Any?>?> = HashMap()
+    interface Interceptor : Comparable<Interceptor> {
+        val requiresType: KClass<*>?
+        val matchPriority: Float get() = Float.NEGATIVE_INFINITY
+        override fun compareTo(other: Interceptor): Int = -this.matchPriority.compareTo(other.matchPriority)
+        fun <T> matches(request: DisplayRequest<T>): Boolean = true
 
-    open class Builder<VIEW>(
-            val factory: ViewFactory<VIEW>,
-            val stack: MutableObservableList<ViewGenerator<ViewFactory<VIEW>, VIEW>> = StandardObservableList(),
-            val showHidden: Boolean = false,
-            startContext: ViewContext = ViewContext()
-    ) : ViewContextStack {
-        override val contexts = ArrayList<ViewContext>().also { it.add(startContext) }
-        override val context get() = contexts.last()
-        open val detailOnClick: Boolean get() = true
+        fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW>
 
-        var view: VIEW? = null
-        fun outputText(text: String) {
-            view = factory.text(
-                    text = text,
-                    size = context.textSize,
-                    importance = context.viewImportance,
-                    maxLines = context.maxLines
-            )
+        companion object
+    }
+
+    abstract class BaseInterceptor(
+            override val requiresType: KClass<*>? = null,
+            override val matchPriority: Float = 0f
+    ) : Interceptor
+
+    //TODO: Implies Not Null
+    abstract class BaseTypeInterceptor<T : Any>(
+            override val requiresType: KClass<T>,
+            override val matchPriority: Float = 0f
+    ) : Interceptor {
+        open fun matchesTyped(request: DisplayRequest<T>): Boolean = true
+        abstract fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW>
+
+        @Suppress("UNCHECKED_CAST")
+        final override fun <T2> matches(request: DisplayRequest<T2>): Boolean = !request.type.isNullable && matchesTyped(request as DisplayRequest<T>)
+
+        @Suppress("UNCHECKED_CAST")
+        final override fun <T2, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T2>): ViewGenerator<DEPENDENCY, VIEW> = generateTyped(request as DisplayRequest<T>)
+    }
+
+    @Deprecated("x")
+    data class DefaultInterceptor(
+            override val requiresType: KClass<*>?,
+            override val matchPriority: Float = 0f,
+            val matches: (DisplayRequest<*>) -> Boolean = { true },
+            val generate: (DisplayRequest<*>) -> ViewGenerator<ViewFactory<Any?>, Any?>
+    ) : Interceptor {
+        override fun <T> matches(request: DisplayRequest<T>): Boolean = this.matches.invoke(request)
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            return this.generate.invoke(request) as ViewGenerator<DEPENDENCY, VIEW>
         }
+    }
 
-        fun ViewFactory<VIEW>.label(text: String): VIEW {
-            return text(
-                    text = "$text:",
-                    size = context.textSize,
-                    importance = context.viewImportance,
-                    maxLines = 1
-            )
-        }
+    @Deprecated("x")
+    data class DirectInterceptor(
+            override val requiresType: KClass<*>?,
+            override val matchPriority: Float = 0f,
+            val matches: (DisplayRequest<*>) -> Boolean = { true },
+            val generate: ViewFactory<Any?>.(DisplayRequest<*>) -> Any?
+    ) : Interceptor {
+        override fun <T> matches(request: DisplayRequest<T>): Boolean = this.matches.invoke(request)
 
-        fun <T> build(encoder: ViewEncoder, value: T, type: Type<T>): VIEW {
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> = object : ViewGenerator<DEPENDENCY, VIEW> {
+
             @Suppress("UNCHECKED_CAST")
-            encoder.encoder(type).invoke(this.let { it as Builder<Any?> }, value)
-            return view!!
+            override fun generate(dependency: DEPENDENCY): VIEW = generate.invoke(dependency as ViewFactory<Any?>, request) as VIEW
         }
     }
 
-    fun <VIEW, T> build(
-            factory: ViewFactory<VIEW>,
-            stack: MutableObservableList<ViewGenerator<ViewFactory<VIEW>, VIEW>> = StandardObservableList(),
-            showHidden: Boolean = false,
-            startContext: ViewContext = ViewContext(),
-            value: T,
-            type: Type<T>
-    ):VIEW = Builder(factory = factory, stack = stack, showHidden = showHidden, startContext = startContext).build(this, value, type)
+    class Interceptors(
+            val byType: MutableMap<KClass<*>, SortedBag<Interceptor>> = HashMap(),
+            val others: SortedBag<Interceptor> = SortedBag()
+    ) {
+        constructor(interceptors: Set<Interceptor>) : this(
+                byType = interceptors.asSequence()
+                        .filter { it.requiresType != null }
+                        .groupingBy { it.requiresType!! }
+                        .aggregateTo<Interceptor, KClass<*>, SortedBag<Interceptor>, HashMap<KClass<*>, SortedBag<Interceptor>>>(HashMap()) { key, accumulator, element, first ->
+                            val a = accumulator ?: SortedBag()
+                            a.add(element)
+                            a
+                        },
+                others = interceptors
+                        .asSequence()
+                        .filter { it.requiresType == null }
+                        .fold(SortedBag()) { bag, it -> bag.add(it); bag }
+        )
 
-    inline fun <T> addEncoderString(type: Type<T>, crossinline toString: Builder<*>.(T) -> String) {
-        addEncoder(type) {
-            outputText(toString(it))
+        operator fun plusAssign(interceptor: Interceptor) {
+            if (interceptor.requiresType != null) {
+                byType.getOrPut(interceptor.requiresType!!) { SortedBag() }
+            }
+        }
+
+        fun resolve(request: DisplayRequest<*>): Interceptor? {
+            return byType[request.type.base.kClass]?.let {
+                it.asSequence().filter { it.matches(request) }.firstOrNull()
+            } ?: others.asSequence().filter { it.matches(request) }.firstOrNull()
+        }
+
+        operator fun plus(other: Interceptors): Interceptors {
+            return Interceptors(
+                    byType = this.byType.toMutableMap().apply { putAll(other.byType) },
+                    others = this.others + other.others
+            )
         }
     }
 
-    inline fun <T : Any> addEncoderString(kclass: KClass<T>, crossinline toString: Builder<*>.(Type<*>, T?) -> String) {
-        addEncoder(kclass) { type ->
-            { it ->
-                outputText(toString(type, it))
-            }
+    private val interceptors = AtomicReference(ViewEncoderDefaultModule)
+    fun register(interceptors: Interceptors) {
+        var start = this.interceptors.value
+        var new = start + interceptors
+        while (start != this.interceptors.value) {
+            start = this.interceptors.value
+            new = start + interceptors
         }
+        this.interceptors.value = new
     }
 
-    inline fun <T> addEncoderString(type: Type<T>) {
-        addEncoder(type) {
-            outputText(it.toString())
-        }
+    fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> getViewGenerator(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+        return interceptors.value.resolve(request)?.generate(request)
+                ?: throw IllegalArgumentException("No matching ViewGenerator was found.")
     }
 
-    init {
-
-        addEncoder(Unit::class.type) {
-            view = factory.space(1f)
-        }
-        addEncoderString(Boolean::class.type) {
-            @Suppress("UNCHECKED_CAST") val onOffTexts = context.fieldInfo?.annotations
-                    ?.find { it.name.endsWith("BooleanStrings") }
-                    ?.arguments as? List<String> ?: listOf("Off", "On")
-            if (it) onOffTexts[1] else onOffTexts[0]
-        }
-        addEncoderString(Byte::class.type)
-        addEncoderString(Short::class.type)
-        addEncoderString(Int::class.type)
-        addEncoderString(Long::class.type)
-        addEncoderString(Char::class.type)
-        addEncoderString(String::class.type)
-
-        initializeEncoders()
-
-        addEncoderString(Date::class.type) { DefaultLocale.renderDate(it) }
-        addEncoderString(DateTime::class.type) { DefaultLocale.renderDateTime(it) }
-        addEncoderString(Time::class.type) { DefaultLocale.renderTime(it) }
-        addEncoderString(TimeStamp::class.type) { DefaultLocale.renderTimeStamp(it) }
-
-        addEncoderString(KClass::class) { type, it ->
-            if (it == null) {
-                "None"
-            } else {
-                registry.kClassToExternalNameRegistry[it]?.humanify() ?: "Unknown"
-            }
-        }
-        addEncoderString(ClassInfo::class) { type, it ->
-            if (it == null) {
-                "None"
-            } else {
-                registry.kClassToExternalNameRegistry[it.kClass]?.humanify() ?: "Unknown"
-            }
-        }
-        addEncoderString(FieldInfo::class) { type, it ->
-            if (it == null) {
-                "None"
-            } else {
-                val owner = type.param(0)
-                val classInfo = registry.classInfoRegistry[owner.type.kClass]!!
-                val directToClass = classInfo.canBeInstantiated
-                if (directToClass) it.name.humanify()
-                else (registry.kClassToExternalNameRegistry[classInfo.kClass]?.humanify()
-                        ?: "Unknown") + " " + it.name.humanify()
-            }
-        }
-
-        addEncoder(Reference::class) { type ->
-            if (type.nullable) return@addEncoder null
-
-            val keyType = type.param(0).type
-            val valueType = type.param(1).type
-            val suspendMap = suspendMaps.maps[valueType.kClass]
-            val keyEncoder = rawEncoder(keyType)
-            val entryEncoder = rawEncoder(SuspendMap.Entry::class.type.copy(typeParameters = listOf(TypeProjection(keyType), TypeProjection(valueType))))
-
-            if (suspendMap == null) {
-                return@addEncoder { value ->
-                    keyEncoder.invoke(this, value!!.key)
-                }
-            }
-
-            return@addEncoder label@{ value ->
-
-                val full = StandardObservableProperty<SuspendMap.Entry<Any?, Any>?>(null)
-                val loadingObs = StandardObservableProperty(false)
-
-                view = factory.work(factory.swap(
-                        full.transform {
-                            if (it == null) keyEncoder.invoke(this, value!!.key)
-                            else entryEncoder.invoke(this, it)
-                            view to Animation.None
-                        }
-                ), loadingObs)
-            }
-        }
-        addEncoder(SuspendMap.Entry::class) { type ->
-            if (type.nullable) return@addEncoder null
-
-            val keyType = type.param(0).type
-            val valueType = type.param(1).type
-            val keyEncoder = rawEncoder(keyType)
-            val valueEncoder = rawEncoder(valueType)
-
-            return@addEncoder label@{ value ->
-                view = factory.vertical {
-                    useContext(
-                            owner = value,
-                            size = ViewSize.OneLine,
-                            importance = .3f
-                    ) {
-                        keyEncoder.invoke(this@label, value!!.key)
-                        -view
-                    }
-                    useContext(
-                            owner = value,
-                            importance = .7f
-                    ) {
-                        valueEncoder.invoke(this@label, value!!.value)
-                        -view
-                    }
-                }
-            }
-        }
-        addEncoder(Map.Entry::class) { type ->
-            if (type.nullable) return@addEncoder null
-
-            val keyType = type.param(0).type
-            val valueType = type.param(1).type
-            val keyEncoder = rawEncoder(keyType)
-            val valueEncoder = rawEncoder(valueType)
-
-            return@addEncoder label@{ value ->
-                view = factory.vertical {
-                    useContext(
-                            owner = value,
-                            size = ViewSize.OneLine,
-                            importance = .3f
-                    ) {
-                        keyEncoder.invoke(this@label, value!!.key)
-                        -view
-                    }
-                    useContext(
-                            owner = value,
-                            importance = .7f
-                    ) {
-                        valueEncoder.invoke(this@label, value!!.value)
-                        -view
-                    }
-                }
-            }
-        }
-        addEncoder(Map::class) { type ->
-            if (type.nullable) return@addEncoder null
-
-            val keyType = type.param(0).type
-            val valueType = type.param(1).type
-            val entryEncoder = rawEncoder(Map.Entry::class.type.copy(typeParameters = listOf(
-                    TypeProjection(keyType),
-                    TypeProjection(valueType)
-            )))
-
-            return@addEncoder label@{ value ->
-                when (context.size) {
-                    ViewSize.Full -> {
-                        view = factory.vertical {
-                            value!!.forEach { entry ->
-                                shrink {
-                                    entryEncoder.invoke(this@label, entry)
-                                    -view
-                                }
-                            }
-                        }
-                    }
-                    ViewSize.Summary -> {
-                        view = factory.vertical {
-                            value!!.asSequence().take(2).forEach { entry ->
-                                shrink {
-                                    entryEncoder.invoke(this@label, entry)
-                                    -view
-                                }
-                            }
-                            if (value.size > 2) {
-                                shrink {
-                                    outputText("...")
-                                    -view
-                                }
-                            }
-                        }
-                    }
-                    ViewSize.OneLine -> {
-                        outputText(value!!.entries.joinToString(", ") { it.key.toString() + ": " + it.value.toString() })
-                    }
-                }
-            }
-        }
-        addEncoder(List::class) { type ->
-            if (type.nullable) return@addEncoder null
-
-            val elementType = type.param(0).type
-            val elementCoder = rawEncoder(elementType)
-
-            return@addEncoder label@{ value ->
-                when (context.size) {
-                    ViewSize.Full -> {
-                        view = factory.vertical {
-                            value!!.forEach { entry ->
-                                shrink {
-                                    elementCoder.invoke(this@label, entry)
-                                    -view
-                                }
-                            }
-                        }
-                    }
-                    ViewSize.Summary -> {
-                        view = factory.vertical {
-                            value!!.asSequence().take(2).forEach { entry ->
-                                shrink {
-                                    elementCoder.invoke(this@label, entry)
-                                    -view
-                                }
-                            }
-                            if (value.size > 2) {
-                                shrink {
-                                    outputText("...")
-                                    -view
-                                }
-                            }
-                        }
-                    }
-                    ViewSize.OneLine -> {
-                        outputText(value!!.joinToString(", ") { it.toString() })
-                    }
-                }
-            }
-        }
-
-
-        addEncoder(object : Encoder.Generator<ViewEncoder.Builder<Any?>> {
-            override val description: String = "enum"
-            override val priority: Float get() = .9f
-
-            override fun generateEncoder(type: Type<*>): TypeEncoder<ViewEncoder.Builder<Any?>, Any?>? {
-                val classInfo = registry.classInfoRegistry[type.kClass] ?: return null
-                if (classInfo.enumValues == null) return null
-
-                return { value ->
-                    outputText((value as? Enum<*>)?.name?.humanify() ?: "None")
-                }
-            }
-        })
-        addEncoder(object : Encoder.Generator<ViewEncoder.Builder<Any?>> {
-            override val description: String = "null"
-            override val priority: Float get() = 1f
-
-            override fun generateEncoder(type: Type<*>): TypeEncoder<ViewEncoder.Builder<Any?>, Any?>? {
-                if (!type.nullable) return null
-                val underlyingCoder = rawEncoder(type.copy(nullable = false))
-
-                return { value ->
-                    if (value == null) {
-                        outputText("None")
-                    } else {
-                        underlyingCoder.invoke(this, value)
-                    }
-                }
-            }
-        })
-        addEncoder(object : Encoder.Generator<ViewEncoder.Builder<Any?>> {
-            override val description: String = "reflection"
-            override val priority: Float get() = 0f
-
-            override fun generateEncoder(type: Type<*>): TypeEncoder<ViewEncoder.Builder<Any?>, Any?>? {
-                val classInfo = registry.classInfoRegistry[type.kClass] ?: return null
-                val lazySubCoders by lazy {
-                    (registry.classInfoRegistry[type.kClass]
-                            ?: throw IllegalArgumentException("KClass ${type.kClass} not registered.")).fieldsToRender(false).associateWith { rawEncoder(it.type as Type<*>) }
-                }
-                return label@{ value ->
-                    val out = this
-
-                    if(value == null){
-                        outputText("Fill in a " + registry.kClassToExternalNameRegistry[classInfo.kClass]!!.humanify())
-                        return@label
-                    }
-
-                    if (classInfo.fields.isEmpty()) {
-                        outputText(registry.kClassToExternalNameRegistry[classInfo.kClass]!!.humanify())
-                        return@label
-                    }
-
-                    with(factory) {
-                        when (context.size) {
-                            ViewSize.Full -> view = vertical {
-                                for ((field, coder) in lazySubCoders) {
-                                    out.forField(
-                                            fieldInfo = field,
-                                            owner = value
-                                    ) {
-                                        if (context.fieldInfo?.needsNoContext == true) {
-                                            coder.invoke(out, field.get.untyped(value!!))
-                                            -out.view
-                                        } else {
-                                            -horizontal {
-                                                -label(text = field.annotations
-                                                        .find { it.name.endsWith("NiceName") }
-                                                        ?.arguments
-                                                        ?.firstOrNull() as? String
-                                                        ?: field.name.humanify())
-                                                coder.invoke(out, field.get.untyped(value!!))
-                                                -out.view
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            ViewSize.Summary -> {
-
-                                //Find three most important elements and sort information
-                                val defaultSort = classInfo.defaultSort
-                                val importantFields = classInfo.fieldsToRender(showHidden)
-                                        .filter { it != defaultSort?.field }
-                                        .takeWhile { it.importance >= .5f }
-                                        .take(3)
-                                        .toList()
-                                val oldImportanceRange = importantFields.last().importance..importantFields.first().importance
-                                view = horizontal {
-                                    +vertical {
-                                        importantFields.forEach { field ->
-                                            out.forField(
-                                                    fieldInfo = field,
-                                                    owner = value,
-                                                    importance = (field.importance - oldImportanceRange.start) / (oldImportanceRange.endInclusive - oldImportanceRange.start)
-                                            ) {
-                                                val coder = lazySubCoders[field]!!
-                                                if (context.fieldInfo?.needsNoContext == true) {
-                                                    coder.invoke(out, field.get.untyped(value))
-                                                    -out.view
-                                                } else {
-                                                    -horizontal {
-                                                        -label(text = field.annotations
-                                                                .find { it.name.endsWith("NiceName") }
-                                                                ?.arguments
-                                                                ?.firstOrNull() as? String
-                                                                ?: field.name.humanify())
-                                                        coder.invoke(out, field.get.untyped(value))
-                                                        -out.view
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (defaultSort != null) {
-                                        out.useContext(ViewContext(
-                                                fieldInfo = defaultSort.field,
-                                                owner = value,
-                                                size = context.size.shrink()
-                                        )) {
-                                            lazySubCoders[defaultSort.field]!!.invoke(out, defaultSort.field.get.untyped(value))
-                                            -out.view
-                                        }
-                                    }
-                                }.let {
-                                    if (detailOnClick) {
-                                        it.clickable {
-                                            @Suppress("UNCHECKED_CAST")
-                                            stack.push(DisplayVG(
-                                                    formEncoder = this@ViewEncoder,
-                                                    stack = stack,
-                                                    value = value,
-                                                    type = type as Type<Any?>
-                                            ))
-                                        }
-                                    } else it
-                                }
-                            }
-                            ViewSize.Footnote -> outputText(value.toString()).let {
-                                if (detailOnClick) {
-                                    it.clickable {
-                                        @Suppress("UNCHECKED_CAST")
-                                        stack.push(DisplayVG(
-                                                formEncoder = this@ViewEncoder,
-                                                stack = stack,
-                                                value = value,
-                                                type = type as Type<Any?>
-                                        ))
-                                    }
-                                } else it
-                            }
-                        }
-                    }
-                    //End view output
-                }
-            }
-        })
-        addEncoder(object : Encoder.Generator<ViewEncoder.Builder<Any?>> {
-            override val description: String = "polymorphic"
-            override val priority: Float get() = 1.1f
-
-            override fun generateEncoder(type: Type<*>): TypeEncoder<ViewEncoder.Builder<Any?>, Any?>? {
-                if (type.nullable) return null
-                if (registry.classInfoRegistry[type.kClass]?.canBeInstantiated == true) return null
-                return label@{ value ->
-                    if (value == null) {
-                        outputText("None")
-                    } else {
-                        view = factory.vertical {
-                            -factory.text(
-                                    text = registry.kClassToExternalNameRegistry[value::class]?.humanify() ?: "",
-                                    size = TextSize.Subheader
-                            )
-                            rawEncoder(value::class.type).invoke(this@label, value)
-                            -view
-                        }
-                    }
-                }
-            }
-        })
+    fun <T> getAnyViewGenerator(request: DisplayRequest<T>): ViewGenerator<ViewFactory<Any?>, Any?> {
+        return interceptors.value.resolve(request)?.generate(request)
+                ?: throw IllegalArgumentException("No matching ViewGenerator was found.")
     }
+
+
 }

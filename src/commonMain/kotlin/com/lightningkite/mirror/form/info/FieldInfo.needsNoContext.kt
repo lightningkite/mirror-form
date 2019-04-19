@@ -9,7 +9,7 @@ annotation class NeedsNoContext
 
 val MirrorClass.Field<*, *>.needsNoContext: Boolean
     get() = annotations
-            .any { (it as? MirrorAnnotation)?.annotationType == NeedsNoContext::class } || when (this.name) {
+            .any { it is NeedsNoContext || (it as? MirrorAnnotation)?.annotationType == NeedsNoContext::class } || when (this.name) {
         "email" -> true
         "title" -> true
         "name" -> true
