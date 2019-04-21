@@ -16,14 +16,8 @@ import com.lightningkite.mirror.form.DisplayRequest
 import com.lightningkite.mirror.form.FormState
 import com.lightningkite.mirror.form.ViewEncoder
 import com.lightningkite.mirror.info.ListMirror
-import com.lightningkite.reacktive.list.MutableObservableList
-import com.lightningkite.reacktive.list.ObservableList
-import com.lightningkite.reacktive.list.WrapperObservableList
-import com.lightningkite.reacktive.list.asObservableList
-import com.lightningkite.reacktive.property.MutableObservableProperty
-import com.lightningkite.reacktive.property.ObservableProperty
-import com.lightningkite.reacktive.property.StandardObservableProperty
-import com.lightningkite.reacktive.property.transform
+import com.lightningkite.reacktive.list.*
+import com.lightningkite.reacktive.property.*
 
 class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val stack: MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
@@ -65,9 +59,14 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
             }
             +list(
                     data = value
-            ) { itemObs ->
+            ) { itemObs, indexObs ->
                 vertical {
-                    +viewGenerator(itemObs).generate(dependency)
+                    val virtualEdit = VirtualMutableObservableProperty(
+                            getterFun = { itemObs.value},
+                            setterFun = { value[indexObs.value] = it },
+                            event = itemObs
+                    )
+                    +viewGenerator(virtualEdit).generate(dependency)
                     -imageButton(
                             imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
                             label = "More",

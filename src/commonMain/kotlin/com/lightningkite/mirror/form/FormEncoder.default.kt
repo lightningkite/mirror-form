@@ -17,20 +17,20 @@ import com.lightningkite.reacktive.property.transform
 import mirror.kotlin.PairMirror
 
 
-val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
-
-    inline fun <reified T : Number> number(noinline toT: Number.() -> T, inputType: NumberInputType, decimalPlaces: Int = 2) {
-        this += object : FormEncoder.BaseNullableTypeInterceptor<T>(T::class) {
-            override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<T?>): ViewGenerator<DEPENDENCY, VIEW> {
-                return NumberFormViewGenerator(
-                        observable = request.observable,
-                        toT = toT,
-                        numberInputType = inputType,
-                        decimalPlaces = decimalPlaces
-                )
-            }
+inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Number.() -> T, inputType: NumberInputType, decimalPlaces: Int = 2) {
+    this += object : FormEncoder.BaseNullableTypeInterceptor<T>(T::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<T?>): ViewGenerator<DEPENDENCY, VIEW> {
+            return NumberFormViewGenerator(
+                    observable = request.observable,
+                    toT = toT,
+                    numberInputType = inputType,
+                    decimalPlaces = decimalPlaces
+            )
         }
     }
+}
+
+val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     number(Number::toByte, NumberInputType.Integer, 0)
     number(Number::toShort, NumberInputType.Integer, 0)
@@ -49,7 +49,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Boolean>): ViewGenerator<DEPENDENCY, VIEW> {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-                    toggle(request.observable.perfectNonNull())
+                    toggle(request.observable.perfectNonNull(false))
                 }
             }
         }
@@ -60,7 +60,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     textField(
-                            text = request.observable.perfectNonNull(),
+                            text = request.observable.perfectNonNull(""),
                             type = TextInputType.Sentence
                     )
                 }
@@ -108,7 +108,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Date>): ViewGenerator<DEPENDENCY, VIEW> {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-                    datePicker(request.observable.perfectNonNull())
+                    datePicker(request.observable.perfectNonNull(TimeStamp.now().date()))
                 }
             }
         }
@@ -118,7 +118,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Time>): ViewGenerator<DEPENDENCY, VIEW> {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-                    timePicker(request.observable.perfectNonNull())
+                    timePicker(request.observable.perfectNonNull(TimeStamp.now().time()))
                 }
             }
         }
@@ -128,7 +128,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<DateTime>): ViewGenerator<DEPENDENCY, VIEW> {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-                    dateTimePicker(request.observable.perfectNonNull())
+                    dateTimePicker(request.observable.perfectNonNull(TimeStamp.now().dateTime()))
                 }
             }
         }
@@ -138,7 +138,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<TimeStamp>): ViewGenerator<DEPENDENCY, VIEW> {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-                    dateTimePicker(request.observable.perfectNonNull().transform(
+                    dateTimePicker(request.observable.perfectNonNull(TimeStamp.now()).transform(
                             mapper = { it.dateTime() },
                             reverseMapper = { it.toTimeStamp() }
                     ))
@@ -193,8 +193,8 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     }
 }
 
-fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull() = this.transform(
-        mapper = { it.valueOrNull!! },
+fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull(default: T) = this.transform(
+        mapper = { it.valueOrNull ?: default },
         reverseMapper = { FormState.success(it) }
 )
 

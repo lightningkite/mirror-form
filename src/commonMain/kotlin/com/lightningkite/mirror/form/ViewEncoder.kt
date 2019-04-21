@@ -106,7 +106,9 @@ object ViewEncoder {
 
         operator fun plusAssign(interceptor: Interceptor) {
             if (interceptor.requiresType != null) {
-                byType.getOrPut(interceptor.requiresType!!) { SortedBag() }
+                byType.getOrPut(interceptor.requiresType!!) { SortedBag() }.add(interceptor)
+            } else {
+                others.add(interceptor)
             }
         }
 

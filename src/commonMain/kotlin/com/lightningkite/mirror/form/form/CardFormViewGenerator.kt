@@ -6,7 +6,6 @@ import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.FormEncoder
 import com.lightningkite.mirror.form.FormState
-import com.lightningkite.mirror.form.ObservableFormViewGenerator
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty

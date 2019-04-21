@@ -23,31 +23,3 @@ fun <T : Any> ViewEncoder.Interceptors.string(
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> = StringViewGenerator(request, toString)
     }
 }
-
-//fun ViewEncoder.Interceptors.default(
-//        requiresType: KClass<*>?,
-//        matchPriority: Float = 0f,
-//        matches: (DisplayRequest<*>) -> Boolean = { true },
-//        generate: (DisplayRequest<*>) -> ViewGenerator<ViewFactory<Any?>, Any?>
-//) {
-//    this += ViewEncoder.DefaultInterceptor(
-//            requiresType = requiresType,
-//            matchPriority = matchPriority,
-//            matches = matches,
-//            generate = generate
-//    )
-//}
-//
-//fun ViewEncoder.Interceptors.direct(
-//        requiresType: KClass<*>?,
-//        matchPriority: Float = 0f,
-//        matches: (DisplayRequest<*>) -> Boolean = { true },
-//        generate: ViewFactory<Any?>.(DisplayRequest<*>) -> Any?
-//) {
-//    this += ViewEncoder.DirectInterceptor(
-//            requiresType = requiresType,
-//            matchPriority = matchPriority,
-//            matches = matches,
-//            generate = generate
-//    )
-//}

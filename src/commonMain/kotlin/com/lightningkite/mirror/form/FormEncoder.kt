@@ -125,7 +125,9 @@ object FormEncoder {
 
         operator fun plusAssign(interceptor: Interceptor) {
             if (interceptor.requiresType != null) {
-                byType.getOrPut(interceptor.requiresType!!) { SortedBag() }
+                byType.getOrPut(interceptor.requiresType!!) { SortedBag() }.add(interceptor)
+            } else {
+                others.add(interceptor)
             }
         }
 
@@ -143,7 +145,7 @@ object FormEncoder {
         }
     }
 
-    private val interceptors = AtomicReference(Interceptors(setOf()))
+    private val interceptors = AtomicReference(FormEncoderDefaultModule)
     fun register(interceptors: Interceptors) {
         var start = this.interceptors.value
         var new = start + interceptors

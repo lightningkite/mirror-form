@@ -34,7 +34,7 @@ class BackedByStringFormViewGenerator<T : BackedByString, DEPENDENCY : ViewFacto
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
         textField(
-                text = form.raw.perfectNonNull(),
+                text = form.raw.perfectNonNull(""),
                 type = inputType
         ).apply {
             form.bind(lifecycle)
