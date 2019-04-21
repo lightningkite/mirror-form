@@ -13,11 +13,11 @@ import com.lightningkite.reacktive.property.StandardObservableProperty
 class CardFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val stack: MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
         val summaryVG: ViewGenerator<DEPENDENCY, VIEW>,
-        val fullVG: ViewGenerator<DEPENDENCY, VIEW>
+        val fullVG: ()->ViewGenerator<DEPENDENCY, VIEW>
 ) : ViewGenerator<DEPENDENCY, VIEW> {
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
         card(summaryVG.generate(dependency)).clickable {
-            stack.pushFrom(this@CardFormViewGenerator, fullVG)
+            stack.pushFrom(this@CardFormViewGenerator, fullVG())
         }
     }
 }

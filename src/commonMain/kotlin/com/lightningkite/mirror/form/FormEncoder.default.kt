@@ -188,7 +188,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 //                startValue = request.successfulValue,
                 stack = request.general.stack as MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
                 summaryVG = ViewEncoder.getViewGenerator(request.display(null as T)), //TODO: Handle null
-                fullVG = FormEncoder.getViewGenerator(request.copy(scale = ViewSize.Full))
+                fullVG = { FormEncoder.getViewGenerator(request.copy(scale = ViewSize.Full)) }
         )
     }
 }

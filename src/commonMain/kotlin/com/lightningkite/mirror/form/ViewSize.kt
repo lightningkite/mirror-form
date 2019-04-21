@@ -3,12 +3,12 @@ package com.lightningkite.mirror.form
 import com.lightningkite.koolui.concepts.TextSize
 
 enum class ViewSize {
-    Full,
+    OneLine,
     Summary,
-    OneLine;
+    Full;
 
-    fun shrink(): ViewSize = this.ordinal.plus(1).coerceIn(values().indices).let { values()[it] }
-    fun grow(): ViewSize = this.ordinal.minus(1).coerceIn(values().indices).let { values()[it] }
+    fun shrink(): ViewSize = this.ordinal.minus(1).coerceIn(values().indices).let { values()[it] }
+    fun grow(): ViewSize = this.ordinal.plus(1).coerceIn(values().indices).let { values()[it] }
 
     companion object {
         val values = ViewSize.values().toList()

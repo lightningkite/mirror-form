@@ -31,7 +31,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
             type: KClass<T>,
             priority: Float = 0f,
             matches: (DisplayRequest<*>) -> Boolean = { true },
-            toString: (T) -> String? = { this.toString() }
+            toString: (T) -> String? = { it.toString() }
     ) {
         this += object : ViewEncoder.BaseInterceptor(type, priority) {
             override fun <T> matches(request: DisplayRequest<T>): Boolean = matches(request)
@@ -199,7 +199,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
 
     //Reflective (2+ fields, small)
     this += object : ViewEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: DisplayRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size >= 2 && request.scale == ViewSize.Full
+        override fun <T> matches(request: DisplayRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size >= 2 && request.scale < ViewSize.Full
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             @Suppress("UNCHECKED_CAST")
             return ReflectiveSummaryViewGenerator(
@@ -219,9 +219,9 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                         -text(
                                 text = request.observable.transform {
                                     if (it == null) {
-                                        request.type.base.name.humanify()
+                                        request.type.base.localName.humanify()
                                     } else {
-                                        (it as Any)::class.type.name.humanify()
+                                        (it as Any)::class.type.localName.humanify()
                                     }
                                 },
                                 size = request.scale.textSize()
@@ -233,7 +233,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                 @Suppress("UNCHECKED_CAST")
                                 val requestWithType = request.sub<Any>(
                                         type = (it as Any)::class.type as MirrorType<Any>,
-                                        observable = request.observable as ObservableProperty<Any>,
+                                        observable = ConstantObservableProperty(it) as ObservableProperty<Any>,
                                         scale = request.scale
                                 )
                                 requestWithType.getVG()
@@ -248,7 +248,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
 
     //Polymorphic (single line)
     this += object : ViewEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: DisplayRequest<T>): Boolean = request.type.base.kind == UnionKind.POLYMORPHIC && request.scale >= ViewSize.Summary
+        override fun <T> matches(request: DisplayRequest<T>): Boolean = request.type.base.kind == UnionKind.POLYMORPHIC && request.scale < ViewSize.Summary
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
@@ -256,9 +256,9 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                         -text(
                                 text = request.observable.transform {
                                     if (it == null) {
-                                        request.type.base.name.humanify()
+                                        request.type.base.localName.humanify()
                                     } else {
-                                        (it as Any)::class.type.name.humanify()
+                                        (it as Any)::class.type.localName.humanify()
                                     }
                                 },
                                 size = request.scale.textSize()
@@ -270,7 +270,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                 @Suppress("UNCHECKED_CAST")
                                 val requestWithType = request.sub<Any>(
                                         type = (it as Any)::class.type as MirrorType<Any>,
-                                        observable = request.observable as ObservableProperty<Any>,
+                                        observable = ConstantObservableProperty(it) as ObservableProperty<Any>,
                                         scale = request.scale
                                 )
                                 requestWithType.getVG()
