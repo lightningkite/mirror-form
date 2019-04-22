@@ -9,7 +9,10 @@ import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.form.view.PairViewGenerator
+import com.lightningkite.mirror.info.ListMirror
 import com.lightningkite.reacktive.list.MutableObservableList
+import com.lightningkite.reacktive.list.MutableObservableListFromProperty
+import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty
 import com.lightningkite.reacktive.property.lifecycle.listen
@@ -168,6 +171,22 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
 
     //List
+    this += object : FormEncoder.BaseTypeInterceptor<List<Any?>>(List::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<List<Any?>>): ViewGenerator<DEPENDENCY, VIEW> {
+            val type = request.type as ListMirror<Any?>
+            return ListFormViewGenerator(
+                    stack = request.general.stack as MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
+                    value = MutableObservableListFromProperty(request.observable.perfectNonNull(listOf())),
+                    makeView = { request.display(scale = ViewSize.Full, observable = it, type = type.EMirror).getVG<DEPENDENCY, VIEW>().generate(this) },
+                    editViewGenerator = { start, onResult ->
+                        val obs = StandardObservableProperty<FormState<Any?>>(if (start == null) FormState.empty() else FormState.success(start))
+                        val underlyingVg = request.sub(type = type.EMirror, observable = obs, scale = ViewSize.Full).getVG<DEPENDENCY, VIEW>()
+                        FormViewGenerator(underlyingVg, obs, onResult)
+                    }
+            )
+        }
+    }
+
     //Map
     //Enum
     //Polymorphic

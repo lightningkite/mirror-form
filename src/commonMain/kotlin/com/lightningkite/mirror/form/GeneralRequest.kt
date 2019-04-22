@@ -70,6 +70,34 @@ data class FormRequest<T>(
             observable = observable
     )
 
+    fun <S> display(
+            type: MirrorType<S>,
+            observable: ObservableProperty<S>,
+            general: GeneralRequest = this.general,
+            scale: ViewSize = this.scale,
+            owningField: MirrorClass.Field<*, *>? = this.owningField
+    ) = DisplayRequest(
+            general = general,
+            type = type,
+            scale = scale,
+            owningField = owningField,
+            observable = observable
+    )
+
+    fun display(
+            observable: ObservableProperty<T>,
+            type: MirrorType<T> = this.type,
+            general: GeneralRequest = this.general,
+            scale: ViewSize = this.scale,
+            owningField: MirrorClass.Field<*, *>? = this.owningField
+    ) = DisplayRequest(
+            general = general,
+            type = type,
+            scale = scale,
+            owningField = owningField,
+            observable = observable
+    )
+
     fun display(default: T) = DisplayRequest(
             general = general,
             type = type,

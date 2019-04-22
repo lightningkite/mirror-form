@@ -3,6 +3,7 @@ package com.lightningkite.mirror.form.form
 import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.imageButton
 import com.lightningkite.koolui.builders.launchInfoDialog
+import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
 import com.lightningkite.koolui.image.withSizing
@@ -26,6 +27,7 @@ class FormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
             -imageButton(
                     imageWithSizing = MaterialIcon.check.color(dependency.colorSet.foreground).withSizing(),
                     label = "Save",
+                    importance = Importance.Low,
                     onClick = {
                         val result = obs.value
                         if (result is FormState.Success) {
