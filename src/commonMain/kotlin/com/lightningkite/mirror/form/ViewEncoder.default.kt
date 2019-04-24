@@ -64,6 +64,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     string(TimeStamp::class) { DefaultLocale.renderTimeStamp(it) }
 
     string(KClass::class) { it.type.localName.humanify() }
+    string(MirrorType::class) { it.base.localName.humanify() + if(it.isNullable) " (Optional)" else "" }
     string(MirrorClass::class) { it.localName.humanify() }
     string(MirrorClass.Field::class) { it.name }
 

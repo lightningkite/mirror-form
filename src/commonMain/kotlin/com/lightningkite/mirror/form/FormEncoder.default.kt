@@ -2,20 +2,21 @@ package com.lightningkite.mirror.form
 
 import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
+import com.lightningkite.koolui.builders.horizontal
+import com.lightningkite.koolui.builders.text
+import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.form.form.*
-import com.lightningkite.mirror.form.view.PairViewGenerator
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.MutableObservableListFromProperty
 import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty
-import com.lightningkite.reacktive.property.lifecycle.listen
 import com.lightningkite.reacktive.property.transform
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
@@ -27,6 +28,7 @@ inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Nu
             return NumberFormViewGenerator(
                     observable = request.observable,
                     toT = toT,
+                    allowNull = request.type.isNullable,
                     numberInputType = inputType,
                     decimalPlaces = decimalPlaces
             )
@@ -192,12 +194,12 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
 
     //Enum
-    this += object : FormEncoder.BaseInterceptor(matchPriority = 1f){
+    this += object : FormEncoder.BaseInterceptor(matchPriority = 1f) {
         override fun <T> matches(request: FormRequest<T>): Boolean = request.type.base.enumValues != null
 
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             val nnOptions = request.type.base.enumValues!!
-            val options = if(request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
+            val options = if (request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     @Suppress("UNCHECKED_CAST")
@@ -205,7 +207,9 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                             options = options.toList().asObservableList(),
                             selected = (request.observable as MutableObservableProperty<FormState<Any?>>).perfect(options.first()),
                             makeView = { itemObs ->
-                                text(itemObs.transform { (it as? Enum<*>)?.name?.humanify() ?: request.general.nullString })
+                                text(itemObs.transform {
+                                    (it as? Enum<*>)?.name?.humanify() ?: request.general.nullString
+                                })
                             }
                     )
                 }
@@ -215,17 +219,17 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     }
 
     //MirrorType
-    this += object : FormEncoder.BaseTypeInterceptor<MirrorClass<*>>(MirrorClass::class){
-        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<MirrorClass<*>>): ViewGenerator<DEPENDENCY, VIEW> {
-            val castType = request.type as MirrorClassMirror<*>
+    this += object : FormEncoder.BaseNullableTypeInterceptor<MirrorClass<*>>(MirrorClass::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<MirrorClass<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
+            val castType = request.type.base as MirrorClassMirror<*>
             val nnOptions = MirrorRegistry.allSatisfying(castType.TypeMirror)
-            val options = if(request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
+            val options = if (request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     @Suppress("UNCHECKED_CAST")
                     picker(
-                            options = options.toList().asObservableList(),
-                            selected = (request.observable as MutableObservableProperty<FormState<MirrorClass<*>?>>).perfect(options.first()),
+                            options = options.asObservableList(),
+                            selected = request.observable.perfect(options.first()),
                             makeView = { itemObs ->
                                 text(itemObs.transform { it?.localName?.humanify() ?: request.general.nullString })
                             }
@@ -236,14 +240,43 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     }
 
     //Polymorphic
-    this += object : FormEncoder.BaseInterceptor(matchPriority = .9f){
+    this += object : FormEncoder.BaseInterceptor(matchPriority = .9f) {
         override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == UnionKind.POLYMORPHIC
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
-            return ViewGenerator.empty()
+            return PolymorphicFormViewGenerator(request)
         }
     }
 
     //Nullable
+    this += object : FormEncoder.BaseInterceptor(matchPriority = 0.1f) {
+        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.isNullable
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+
+                @Suppress("UNCHECKED_CAST")
+                val form = NullableForm(request.observable as MutableObservableProperty<FormState<Any?>>)
+
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    horizontal {
+                        -toggle(form.isNotNull)
+                        +swap(form.isNotNull.transform {
+                            @Suppress("UNCHECKED_CAST") val vg = if (it) {
+                                request.sub(
+                                        type = request.type.base as MirrorType<Any>,
+                                        observable = form.value,
+                                        scale = request.scale
+                                ).getVG<DEPENDENCY, VIEW>()
+                            } else ViewGenerator.empty()
+                            vg.generate(dependency) to Animation.Fade
+                        })
+                    }.apply {
+                        form.bind(lifecycle)
+                    }
+                }
+            }
+        }
+    }
+
     //Reflective (no fields)
     //Reflective (1 field)
     //Reflective (Many fields)
@@ -263,11 +296,23 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                 fullVG = { FormEncoder.getViewGenerator(request.copy(scale = ViewSize.Full)) }
         )
     }
+
+    //Give up
+    this += object : FormEncoder.BaseInterceptor(matchPriority = Float.NEGATIVE_INFINITY) {
+        override fun <T> matches(request: FormRequest<T>): Boolean = true
+
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(
+                request: FormRequest<T>
+        ) = object : ViewGenerator<DEPENDENCY, VIEW> {
+            override fun generate(dependency: DEPENDENCY): VIEW = dependency.text(text = "No form generator found")
+        }
+    }
 }
+
 
 fun <T> MutableObservableProperty<FormState<T>>.perfect(default: T) = this.transform(
         mapper = {
-            if(it is FormState.Success) it.value
+            if (it is FormState.Success) it.value
             else default
         },
         reverseMapper = { FormState.success(it) }
@@ -276,6 +321,12 @@ fun <T> MutableObservableProperty<FormState<T>>.perfect(default: T) = this.trans
 fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull(default: T) = this.transform(
         mapper = { it.valueOrNull ?: default },
         reverseMapper = { FormState.success(it) }
+)
+
+@Suppress("UNCHECKED_CAST")
+fun <T> MutableObservableProperty<FormState<T?>>.nullIsEmpty() = this.transform(
+        mapper = { if (it is FormState.Success && it.value == null) FormState.empty() else it as FormState<T> },
+        reverseMapper = { it }
 )
 
 fun <T> MutableObservableProperty<FormState<T?>>.perfectNullable() = this.transform(

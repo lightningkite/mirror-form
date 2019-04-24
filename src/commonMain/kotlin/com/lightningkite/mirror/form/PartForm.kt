@@ -39,14 +39,17 @@ abstract class PartForm<T>(val main: MutableObservableProperty<FormState<T>>) {
             }
             for (part in parts) {
                 val newValue = it.breakDown(part.get)
-                if (newValue != null) {
+                if (newValue != null && newValue != part.observable.value) {
                     @Suppress("UNCHECKED_CAST")
                     (part.observable as MutableObservableProperty<Any?>).value = newValue
                 }
             }
         }
         for (part in parts) {
+            var previous = part.observable.value
             lifecycle.listen(part.observable) {
+                if(it == previous) return@listen
+                previous = it
                 justALocalModification = true
                 main.value = combine()
             }
