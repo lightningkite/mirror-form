@@ -146,7 +146,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                         if (it == null) {
                             text(text = request.general.nullString, size = request.scale.textSize())
                         } else {
-                            val underlying = request.sub<Any>(
+                            @Suppress("UNCHECKED_CAST") val underlying = request.sub<Any>(
                                     request.type.base as MirrorClass<Any>,
                                     ConstantObservableProperty<Any>(it),
                                     scale = request.scale

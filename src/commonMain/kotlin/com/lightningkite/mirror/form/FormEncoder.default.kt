@@ -10,6 +10,7 @@ import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.form.view.PairViewGenerator
 import com.lightningkite.mirror.info.ListMirror
+import com.lightningkite.mirror.info.MirrorRegistry
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.MutableObservableListFromProperty
 import com.lightningkite.reacktive.list.asObservableList
@@ -17,6 +18,7 @@ import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty
 import com.lightningkite.reacktive.property.lifecycle.listen
 import com.lightningkite.reacktive.property.transform
+import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
 
 
@@ -188,8 +190,41 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     }
 
     //Map
+
+
     //Enum
+    this += object : FormEncoder.BaseInterceptor(matchPriority = 1f){
+        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.base.enumValues != null
+
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            val nnOptions = request.type.base.enumValues!!
+            val options = if(request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    @Suppress("UNCHECKED_CAST")
+                    picker(
+                            options = options.toList().asObservableList(),
+                            selected = (request.observable as MutableObservableProperty<FormState<Any?>>).perfect(options.first()),
+                            makeView = { itemObs ->
+                                text(itemObs.transform { (it as? Enum<*>)?.name?.humanify() ?: request.general.nullString })
+                            }
+                    )
+                }
+            }
+        }
+
+    }
+
     //Polymorphic
+    this += object : FormEncoder.BaseInterceptor(matchPriority = .9f){
+        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == UnionKind.POLYMORPHIC
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            val base = request.type.base.kClass
+            val nnOptions = MirrorRegistry.index.value.byName.values
+                    .filter {  }
+        }
+    }
+
     //Nullable
     //Reflective (no fields)
     //Reflective (1 field)
@@ -211,6 +246,14 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         )
     }
 }
+
+fun <T> MutableObservableProperty<FormState<T>>.perfect(default: T) = this.transform(
+        mapper = {
+            if(it is FormState.Success) it.value
+            else default
+        },
+        reverseMapper = { FormState.success(it) }
+)
 
 fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull(default: T) = this.transform(
         mapper = { it.valueOrNull ?: default },
