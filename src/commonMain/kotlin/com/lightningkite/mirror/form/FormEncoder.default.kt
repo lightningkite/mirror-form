@@ -9,8 +9,7 @@ import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.form.view.PairViewGenerator
-import com.lightningkite.mirror.info.ListMirror
-import com.lightningkite.mirror.info.MirrorRegistry
+import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.MutableObservableListFromProperty
 import com.lightningkite.reacktive.list.asObservableList
@@ -215,13 +214,32 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     }
 
+    //MirrorType
+    this += object : FormEncoder.BaseTypeInterceptor<MirrorClass<*>>(MirrorClass::class){
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<MirrorClass<*>>): ViewGenerator<DEPENDENCY, VIEW> {
+            val castType = request.type as MirrorClassMirror<*>
+            val nnOptions = MirrorRegistry.allSatisfying(castType.TypeMirror)
+            val options = if(request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    @Suppress("UNCHECKED_CAST")
+                    picker(
+                            options = options.toList().asObservableList(),
+                            selected = (request.observable as MutableObservableProperty<FormState<MirrorClass<*>?>>).perfect(options.first()),
+                            makeView = { itemObs ->
+                                text(itemObs.transform { it?.localName?.humanify() ?: request.general.nullString })
+                            }
+                    )
+                }
+            }
+        }
+    }
+
     //Polymorphic
     this += object : FormEncoder.BaseInterceptor(matchPriority = .9f){
         override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == UnionKind.POLYMORPHIC
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
-            val base = request.type.base.kClass
-            val nnOptions = MirrorRegistry.index.value.byName.values
-                    .filter {  }
+            return ViewGenerator.empty()
         }
     }
 
