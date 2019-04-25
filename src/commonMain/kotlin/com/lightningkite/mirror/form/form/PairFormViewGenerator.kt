@@ -1,6 +1,9 @@
 package com.lightningkite.mirror.form.form
 
+import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.linear
+import com.lightningkite.koolui.builders.space
+import com.lightningkite.koolui.builders.vertical
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.PartForm
@@ -19,9 +22,12 @@ class PairFormViewGenerator<DEPENDENCY : ViewFactory<VIEW>, VIEW>(
     }
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-        frame(linear {
+        frame(vertical {
             -subFirst.generate(dependency)
-            -subSecond.generate(dependency)
+            -horizontal {
+                -space(16f)
+                +subSecond.generate(dependency)
+            }
         }).apply { form.bind(lifecycle) }
     }
 }

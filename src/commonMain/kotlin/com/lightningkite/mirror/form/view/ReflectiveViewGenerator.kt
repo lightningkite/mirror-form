@@ -1,21 +1,24 @@
-package com.lightningkite.mirror.form
+package com.lightningkite.mirror.form.view
 
 import com.lightningkite.koolui.builders.vertical
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
+import com.lightningkite.mirror.form.DisplayRequest
+import com.lightningkite.mirror.form.ViewEncoder
+import com.lightningkite.mirror.form.humanify
+import com.lightningkite.mirror.form.pickDisplayFields
 import com.lightningkite.mirror.info.MirrorClass
-import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.reacktive.property.transform
 
 class ReflectiveViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val request: DisplayRequest<T>
 ) : ViewGenerator<DEPENDENCY, VIEW> {
 
-    val fields = request.type.base.fields.map { field ->
-        val castedField = field as MirrorClass.Field<T, *>
+    val type = request.type as MirrorClass<T>
+    val fields = type.pickDisplayFields(request).map { field ->
         @Suppress("UNCHECKED_CAST")
-        castedField to ViewEncoder.getViewGenerator<Any?, DEPENDENCY, VIEW>(
-                request.child(field = field, observable = request.observable.transform { castedField.get(it) })
+        field to ViewEncoder.getViewGenerator<Any?, DEPENDENCY, VIEW>(
+                request.child(field = field, observable = request.observable.transform { field.get(it) })
         )
     }
 

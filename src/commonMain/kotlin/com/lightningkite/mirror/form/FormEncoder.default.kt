@@ -3,6 +3,7 @@ package com.lightningkite.mirror.form
 import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
 import com.lightningkite.koolui.builders.horizontal
+import com.lightningkite.koolui.builders.launchConfirmationDialog
 import com.lightningkite.koolui.builders.text
 import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.NumberInputType
@@ -10,6 +11,8 @@ import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
+import com.lightningkite.mirror.archive.model.Uuid
+import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.MutableObservableList
@@ -17,6 +20,7 @@ import com.lightningkite.reacktive.list.MutableObservableListFromProperty
 import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty
+import com.lightningkite.reacktive.property.TransformMutableObservableProperty
 import com.lightningkite.reacktive.property.transform
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
@@ -153,6 +157,27 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         }
     }
 
+    this += object : FormEncoder.BaseTypeInterceptor<Uuid>(Uuid::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Uuid>): ViewGenerator<DEPENDENCY, VIEW> {
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    button(
+                            label = request.observable.perfectNonNull(Uuid.randomUUID4()).transform { it.toString() },
+                            onClick = {
+                                if(request.observable.value.valueOrNull == null){
+                                    request.observable.value = FormState.success(Uuid.randomUUID4())
+                                } else {
+                                    launchConfirmationDialog(message = "Do you want to regenerate this ID?"){
+                                        request.observable.value = FormState.success(Uuid.randomUUID4())
+                                    }
+                                }
+                            }
+                    )
+                }
+            }
+        }
+    }
+
 
 //    string(KClass::class) { it.type.localName.humanify() }
 //    string(MirrorClass::class) { it.localName.humanify() }
@@ -208,7 +233,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                             selected = (request.observable as MutableObservableProperty<FormState<Any?>>).perfect(options.first()),
                             makeView = { itemObs ->
                                 text(itemObs.transform {
-                                    (it as? Enum<*>)?.name?.humanify() ?: request.general.nullString
+                                    ((it as? Enum<*>)?.name ?: it?.toString())?.humanify() ?: request.general.nullString
                                 })
                             }
                     )
@@ -278,22 +303,54 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     }
 
     //Reflective (no fields)
+    this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
+        override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.isEmpty()
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            return ViewGenerator.empty()
+        }
+    }
+
     //Reflective (1 field)
+    this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
+        override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size == 1
+        @Suppress("UNCHECKED_CAST")
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            val mirrorClass = request.type.base as MirrorClass<Any>
+            val field = mirrorClass.fields[0] as MirrorClass.Field<Any, Any?>
+            return request.sub(
+                    field.type,
+                    request.observable.transform(
+                            mapper = { it.map { field.get(it as Any) } },
+                            reverseMapper = {
+                                it.map { Breaker.fold(mirrorClass, arrayOf(it)) as T }
+                            }
+                    ),
+                    scale = request.scale
+            ).getVG()
+        }
+    }
+
     //Reflective (Many fields)
+    this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
+        override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size > 1 && request.scale >= ViewSize.Full
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            @Suppress("UNCHECKED_CAST")
+            return ReflectiveFormViewGenerator(request as FormRequest<Any>)
+        }
+    }
 
 
     //Default to using a carded summary on smaller view sizes
     this += object : FormEncoder.BaseInterceptor() {
         override fun <T> matches(request: FormRequest<T>): Boolean = request.scale <= ViewSize.Summary
 
+        @Suppress("UNCHECKED_CAST")
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(
                 request: FormRequest<T>
         ) = CardFormViewGenerator<T, DEPENDENCY, VIEW>(
-//                stack =
-//                startValue = request.successfulValue,
                 stack = request.general.stack as MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
-                summaryVG = ViewEncoder.getViewGenerator(request.display(null as T)), //TODO: Handle null
-                fullVG = { FormEncoder.getViewGenerator(request.copy(scale = ViewSize.Full)) }
+                summaryVG = ViewEncoder.getViewGenerator(request.displayNullable()),
+                request = request
         )
     }
 
@@ -318,10 +375,15 @@ fun <T> MutableObservableProperty<FormState<T>>.perfect(default: T) = this.trans
         reverseMapper = { FormState.success(it) }
 )
 
-fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull(default: T) = this.transform(
-        mapper = { it.valueOrNull ?: default },
-        reverseMapper = { FormState.success(it) }
-)
+fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull(default: T): TransformMutableObservableProperty<FormState<T>, T> {
+    if(this.value !is FormState.Success) {
+        this.value = FormState.success(default)
+    }
+    return this.transform(
+            mapper = { it.valueOrNull ?: default },
+            reverseMapper = { FormState.success(it) }
+    )
+}
 
 @Suppress("UNCHECKED_CAST")
 fun <T> MutableObservableProperty<FormState<T?>>.nullIsEmpty() = this.transform(

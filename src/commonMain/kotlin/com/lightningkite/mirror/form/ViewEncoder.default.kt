@@ -8,7 +8,6 @@ import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.DefaultLocale
-import com.lightningkite.lokalize.Locale.Companion.default
 import com.lightningkite.lokalize.time.Date
 import com.lightningkite.lokalize.time.DateTime
 import com.lightningkite.lokalize.time.Time

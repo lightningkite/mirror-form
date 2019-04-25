@@ -10,6 +10,7 @@ abstract class PartForm<T>(val main: MutableObservableProperty<FormState<T>>) {
 
     data class Part<T, A>(
             val name: String = "",
+            val required: Boolean = true,
             val get: (T) -> A,
             val observable: StandardObservableProperty<FormState<A>>
     ) {
@@ -19,10 +20,11 @@ abstract class PartForm<T>(val main: MutableObservableProperty<FormState<T>>) {
     abstract fun make(): T
 
     val parts = ArrayList<Part<T, *>>()
-    fun <A> part(name: String, get: (T) -> A): Part<T, A> {
+    fun <A> part(name: String, required: Boolean = true, get: (T) -> A): Part<T, A> {
         val part = Part(
                 name = name,
                 get = get,
+                required = required,
                 observable = StandardObservableProperty(main.value.breakDown(get)
                         ?: FormState.empty())
         )
@@ -59,7 +61,10 @@ abstract class PartForm<T>(val main: MutableObservableProperty<FormState<T>>) {
     private fun combine(): FormState<T> {
         for (part in parts) {
             val fs = part.observable.value
-            if (fs.isEmpty) return FormState.empty()
+            if (fs.isEmpty && part.required) {
+                println("Empty because ${part.name} is empty and is required")
+                return FormState.empty()
+            }
             if (fs is FormState.Invalid) return FormState.invalid("${part.name}: " + fs.cause)
         }
         return FormState.success(make())

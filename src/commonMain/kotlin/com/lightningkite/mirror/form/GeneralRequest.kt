@@ -4,6 +4,7 @@ import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.info.MirrorClass
 import com.lightningkite.mirror.info.MirrorType
+import com.lightningkite.mirror.info.nullable
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.WrapperObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
@@ -14,7 +15,7 @@ import com.lightningkite.reacktive.property.transform
 data class GeneralRequest(
         val developerMode: Boolean = false,
         val nullString: String = "N/A",
-        val skipFields: Collection<MirrorClass.Field<*, *>> = listOf(),
+        val impliedFields: Map<MirrorClass.Field<*, *>, Any?> = mapOf(),
         val stack: MutableObservableList<ViewGenerator<ViewFactory<Any?>, Any?>> = WrapperObservableList()
 )
 
@@ -104,6 +105,14 @@ data class FormRequest<T>(
             scale = scale,
             owningField = owningField,
             observable = observable.transform { it.valueOrNull ?: default }
+    )
+
+    fun displayNullable() = DisplayRequest(
+            general = general,
+            type = type.nullable,
+            scale = scale,
+            owningField = owningField,
+            observable = observable.transform { it.valueOrNull }
     )
 
     fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> getVG() = FormEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(this)

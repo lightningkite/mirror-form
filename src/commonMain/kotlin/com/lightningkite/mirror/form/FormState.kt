@@ -4,17 +4,20 @@ sealed class FormState<out T> {
     abstract val valueOrNull: T?
     open val isEmpty: Boolean get() = false
     abstract fun <A> breakDown(get: (T) -> A): FormState<A>?
+    abstract fun <A> map(get: (T) -> A): FormState<A>
     abstract fun <A> asType(): FormState<A>
 
     data class Success<T>(val value: T) : FormState<T>() {
         override val valueOrNull: T? get() = value
         override fun <A> breakDown(get: (T) -> A): FormState<A>? = success(value.let(get))
+        override fun <A> map(get: (T) -> A): FormState<A> = success(value.let(get))
         override fun <A> asType(): FormState<A> = empty()
     }
 
     data class Invalid<T>(val cause: Any? = null) : FormState<T>() {
         override val valueOrNull: T? get() = null
         override fun <A> breakDown(get: (T) -> A): FormState<A>? = null
+        override fun <A> map(get: (T) -> A): FormState<A> = Invalid(cause)
         override fun <A> asType(): FormState<A> = Invalid(cause)
     }
 
@@ -24,6 +27,7 @@ sealed class FormState<out T> {
             get() = true
 
         override fun <A> breakDown(get: (Any?) -> A): FormState<A>? = empty()
+        override fun <A> map(get: (Any?) -> A): FormState<A> = empty()
         override fun <A> asType(): FormState<A> = empty()
     }
 
