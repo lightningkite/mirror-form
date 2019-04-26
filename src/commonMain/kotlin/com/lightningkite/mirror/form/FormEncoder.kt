@@ -5,7 +5,6 @@ import com.lightningkite.kommon.collection.SortedBag
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.info.*
-import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.transform
 import kotlin.reflect.KClass
 

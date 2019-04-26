@@ -1,5 +1,6 @@
 package com.lightningkite.mirror.form.form
 
+import com.lightningkite.kommon.collection.pop
 import com.lightningkite.kommon.collection.push
 import com.lightningkite.kommon.collection.pushFrom
 import com.lightningkite.koolui.views.ViewFactory
@@ -25,6 +26,7 @@ class CardFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     wraps = request.copy(scale = ViewSize.Full).getVG<DEPENDENCY, VIEW>(),
                     obs = obs,
                     onComplete = {
+                        stack.pop()
                         request.observable.value = obs.value
                     }
             )

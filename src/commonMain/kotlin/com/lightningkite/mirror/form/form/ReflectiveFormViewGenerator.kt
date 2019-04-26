@@ -1,11 +1,9 @@
 package com.lightningkite.mirror.form.form
 
-import com.lightningkite.koolui.builders.linear
 import com.lightningkite.koolui.builders.vertical
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
-import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.breaker.PartialBreaker
 import com.lightningkite.mirror.form.*
 import com.lightningkite.mirror.info.MirrorClass
@@ -32,18 +30,20 @@ class ReflectiveFormViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>
                 .map { it.key.index to it.value }
                 .toList()
 
-        override fun make(): T = PartialBreaker.fold(
-                type = request.type,
-                elements = allParts.asSequence()
-                        .filter { !it.value.observable.value.isEmpty }
-                        .associate { it.key.index to it.value.successfulValue }
-                        .plus(implied)
-        )
+        override fun make(): T {
+            return PartialBreaker.fold<T>(
+                    type = request.type,
+                    elements = allParts.asSequence()
+                            .filter { !it.value.value.isEmpty }
+                            .associate { it.key.index to it.value.successfulValue }
+                            .plus(implied)
+            )
+        }
     }
 
     inner class Part(
             val field: MirrorClass.Field<T, *>,
-            val part: PartForm.Part<T, *>,
+            val part: PartForm<T>.PartProperty<*>,
             val vg: ViewGenerator<DEPENDENCY, VIEW>
     )
 
@@ -52,7 +52,7 @@ class ReflectiveFormViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>
         Part(
                 field = it.key,
                 part = it.value,
-                vg = request.child(it.key, it.value.observable).getVG<DEPENDENCY, VIEW>()
+                vg = request.child(it.key, it.value).getVG<DEPENDENCY, VIEW>()
         )
     }
 
@@ -61,11 +61,11 @@ class ReflectiveFormViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>
             for (p in formParts) {
                 -entryContext(
                         label = p.field.name.humanify(),
-                        feedback = (p.part.observable).feedback(p.part.required),
+                        feedback = (p.part).feedback(p.part.required),
                         field = p.vg.generate(dependency)
                 )
             }
-        }).apply { form.bind(lifecycle) }
+        })
     }
 }
 

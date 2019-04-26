@@ -28,6 +28,6 @@ class PairFormViewGenerator<DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                 -space(16f)
                 +subSecond.generate(dependency)
             }
-        }).apply { form.bind(lifecycle) }
+        })
     }
 }

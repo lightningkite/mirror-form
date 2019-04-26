@@ -23,7 +23,8 @@ class PolymorphicFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(priv
 
     var previousType: MirrorType<*>? = null
     var previousVg: ViewGenerator<DEPENDENCY, VIEW> = ViewGenerator.empty()
-    val subVg = form.type.observable.perfectNullable().transform { type ->
+    val subVg = form.type.perfectNullable().transform { _ ->
+        val type = form.type.value.valueOrNull
         if(previousType == type){
             return@transform previousVg
         }
@@ -32,11 +33,11 @@ class PolymorphicFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(priv
             @Suppress("UNCHECKED_CAST")
             request.sub(
                     type = type as MirrorType<T>,
-                    observable = form.actualValue.observable.transform(
+                    observable = form.actualValue.transform(
                             mapper = {
                                 if (it is FormState.Success) {
                                     val nn: Any = it.value!!
-                                    if (nn::class == type.kClass) {
+                                    if (type.kClass.isInstance(nn)) {
                                         it
                                     } else {
                                         FormState.empty()
@@ -58,15 +59,13 @@ class PolymorphicFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(priv
             vertical {
                 -picker(
                         options = options.asObservableList(),
-                        selected = form.type.observable.perfect(options.first()),
+                        selected = form.type.perfect(options.first()),
                         makeView = { itemObs ->
                             text(itemObs.transform { it?.localName?.humanify() ?: request.general.nullString })
                         }
                 )
                 val view = swap(subVg.transform { it.generate(dependency) to Animation.Flip })
                 if (request.scale >= ViewSize.Full) +view else -view
-            }.apply {
-                form.bind(lifecycle)
             }
         }
     }

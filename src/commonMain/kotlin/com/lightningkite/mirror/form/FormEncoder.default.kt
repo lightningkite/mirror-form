@@ -192,8 +192,8 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
             val type = request.type as PairMirror<Any?, Any?>
             return PairFormViewGenerator(
                     form = form,
-                    subFirst = request.sub(type.AMirror, form.first.observable).getVG(),
-                    subSecond = request.sub(type.BMirror, form.second.observable).getVG()
+                    subFirst = request.sub(type.AMirror, form.first).getVG(),
+                    subSecond = request.sub(type.BMirror, form.second).getVG()
             )
         }
     }

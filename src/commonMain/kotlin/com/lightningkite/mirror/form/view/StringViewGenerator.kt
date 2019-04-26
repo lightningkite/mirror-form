@@ -1,6 +1,5 @@
 package com.lightningkite.mirror.form.view
 
-import com.lightningkite.koolui.builders.text
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.DisplayRequest

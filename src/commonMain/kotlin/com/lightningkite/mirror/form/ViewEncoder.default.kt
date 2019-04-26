@@ -221,7 +221,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                     if (it == null) {
                                         request.type.base.localName.humanify()
                                     } else {
-                                        (it as Any)::class.type.localName.humanify()
+                                        MirrorRegistry.retrieve(it).localName.humanify()
                                     }
                                 },
                                 size = request.scale.textSize()
@@ -232,7 +232,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                             } else {
                                 @Suppress("UNCHECKED_CAST")
                                 val requestWithType = request.sub<Any>(
-                                        type = (it as Any)::class.type as MirrorType<Any>,
+                                        type = MirrorRegistry.retrieve(it) as MirrorType<Any>,
                                         observable = ConstantObservableProperty(it) as ObservableProperty<Any>,
                                         scale = request.scale
                                 )
@@ -258,7 +258,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                     if (it == null) {
                                         request.type.base.localName.humanify()
                                     } else {
-                                        (it as Any)::class.type.localName.humanify()
+                                        MirrorRegistry.retrieve(it).localName.humanify()
                                     }
                                 },
                                 size = request.scale.textSize()
@@ -269,7 +269,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                             } else {
                                 @Suppress("UNCHECKED_CAST")
                                 val requestWithType = request.sub<Any>(
-                                        type = (it as Any)::class.type as MirrorType<Any>,
+                                        type = MirrorRegistry.retrieve(it) as MirrorType<Any>,
                                         observable = ConstantObservableProperty(it) as ObservableProperty<Any>,
                                         scale = request.scale
                                 )

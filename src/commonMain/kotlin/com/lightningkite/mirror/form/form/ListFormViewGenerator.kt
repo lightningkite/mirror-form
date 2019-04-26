@@ -21,6 +21,7 @@ import com.lightningkite.mirror.form.ViewEncoder
 import com.lightningkite.mirror.info.ListMirror
 import com.lightningkite.reacktive.list.*
 import com.lightningkite.reacktive.property.*
+import com.lightningkite.reacktive.property.lifecycle.bind
 
 class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val stack: MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
@@ -107,6 +108,15 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                         }
                 )
             }
+        }.apply {
+            if(value is MutableObservableListFromProperty<*>){
+                lifecycle.bind(value.property){
+                    println("--x--")
+                    value.property.debugPrint()
+                }
+            } else {
+                println("value is ${value}")
+            }
         }
 
 
@@ -131,12 +141,24 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     importance = Importance.Low,
                     onClick = {
                         stack.push(editViewGenerator(null) {
+                            stack.pop()
                             previousState = value.toList()
                             value.add(it)
-                            stack.pop()
+                            println("Adding ${it}")
+//                            if(value is MutableObservableListFromProperty<*>) {
+//                                println("--x--")
+//                                value.property.debugPrint()
+//                            }
                         })
                     }
             )
         }
+    }
+}
+
+fun ObservableProperty<*>.debugPrint() {
+    println("Value: $value")
+    if(this is TransformObservableProperty<*, *>){
+        this.observable.debugPrint()
     }
 }

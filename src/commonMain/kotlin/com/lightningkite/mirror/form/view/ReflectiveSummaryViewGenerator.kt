@@ -4,7 +4,6 @@ import com.lightningkite.koolui.builders.vertical
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.info.MirrorClass
-import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.reacktive.property.transform
 
 class ReflectiveSummaryViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(

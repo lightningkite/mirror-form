@@ -2,23 +2,8 @@ package com.lightningkite.mirror.form
 
 import com.lightningkite.kommon.atomic.AtomicReference
 import com.lightningkite.kommon.collection.SortedBag
-import com.lightningkite.kommon.collection.addSorted
-import com.lightningkite.koolui.builders.*
-import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
-import com.lightningkite.lokalize.DefaultLocale
-import com.lightningkite.lokalize.time.Date
-import com.lightningkite.lokalize.time.DateTime
-import com.lightningkite.lokalize.time.Time
-import com.lightningkite.lokalize.time.TimeStamp
-import com.lightningkite.mirror.archive.model.Uuid
-import com.lightningkite.mirror.archive.model.UuidMirror
-import com.lightningkite.mirror.info.*
-import com.lightningkite.reacktive.list.asObservableList
-import com.lightningkite.reacktive.property.transform
-import kotlinx.serialization.UnionKind
-import mirror.kotlin.PairMirror
 import kotlin.reflect.KClass
 
 object ViewEncoder {

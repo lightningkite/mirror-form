@@ -1,8 +1,6 @@
 package com.lightningkite.mirror.form.form
 
 import com.lightningkite.kommon.string.BackedByString
-import com.lightningkite.kommon.string.Uri
-import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
@@ -10,9 +8,6 @@ import com.lightningkite.mirror.form.FormState
 import com.lightningkite.mirror.form.ValidatingForm
 import com.lightningkite.mirror.form.perfectNonNull
 import com.lightningkite.reacktive.property.MutableObservableProperty
-import com.lightningkite.reacktive.property.StandardObservableProperty
-import com.lightningkite.reacktive.property.lifecycle.listen
-import com.lightningkite.reacktive.property.transform
 
 class BackedByStringFormViewGenerator<T : BackedByString, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val observable: MutableObservableProperty<FormState<T?>>,
