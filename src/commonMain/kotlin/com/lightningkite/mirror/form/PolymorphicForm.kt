@@ -1,5 +1,6 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.mirror.info.MirrorRegistry
 import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.mirror.info.satisfies
 import com.lightningkite.mirror.info.type
@@ -14,7 +15,7 @@ class PolymorphicForm<T>(main: MutableObservableProperty<FormState<T>>, val sati
     val type = part("type") {
         if (it == null) null else {
             val notNull: Any = it
-            notNull::class.type.satisfies(satisfies)
+            MirrorRegistry.retrieve(notNull).satisfies(satisfies)
         }
     }
 

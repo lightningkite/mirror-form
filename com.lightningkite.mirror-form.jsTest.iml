@@ -4,8 +4,8 @@
     <facet type="kotlin-language" name="Kotlin">
       <configuration version="3" platform="JavaScript " useProjectSettings="false" isTestModule="true" externalProjectId=":mirror-form">
         <sourceSets>
-          <sourceSet>com.lightningkite.mirror-form.commonMain</sourceSet>
           <sourceSet>com.lightningkite.mirror-form.commonTest</sourceSet>
+          <sourceSet>com.lightningkite.mirror-form.commonMain</sourceSet>
           <sourceSet>com.lightningkite.mirror-form.jsMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>

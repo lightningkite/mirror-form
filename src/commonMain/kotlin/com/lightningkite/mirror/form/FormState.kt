@@ -26,7 +26,7 @@ sealed class FormState<out T> {
         override val isEmpty: Boolean
             get() = true
 
-        override fun <A> breakDown(get: (Any?) -> A): FormState<A>? = empty()
+        override fun <A> breakDown(get: (Any?) -> A): FormState<A>? = null
         override fun <A> map(get: (Any?) -> A): FormState<A> = empty()
         override fun <A> asType(): FormState<A> = empty()
     }

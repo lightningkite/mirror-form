@@ -49,8 +49,8 @@ abstract class PartForm<T>(val main: MutableObservableProperty<FormState<T>>) {
         }
         for (part in parts) {
             var previous = part.observable.value
-            lifecycle.listen(part.observable) {
-                if(it == previous) return@listen
+            lifecycle.bind(part.observable) {
+                if(it == previous) return@bind
                 previous = it
                 justALocalModification = true
                 main.value = combine()
@@ -62,7 +62,6 @@ abstract class PartForm<T>(val main: MutableObservableProperty<FormState<T>>) {
         for (part in parts) {
             val fs = part.observable.value
             if (fs.isEmpty && part.required) {
-                println("Empty because ${part.name} is empty and is required")
                 return FormState.empty()
             }
             if (fs is FormState.Invalid) return FormState.invalid("${part.name}: " + fs.cause)

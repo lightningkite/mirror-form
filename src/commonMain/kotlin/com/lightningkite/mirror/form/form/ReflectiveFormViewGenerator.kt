@@ -57,7 +57,7 @@ class ReflectiveFormViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>
     }
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-        frame(vertical {
+        scrollVertical(vertical {
             for (p in formParts) {
                 -entryContext(
                         label = p.field.name.humanify(),

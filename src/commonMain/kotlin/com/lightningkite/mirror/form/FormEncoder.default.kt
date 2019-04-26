@@ -51,6 +51,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     this += object : FormEncoder.BaseNullableTypeInterceptor<Unit>(Unit::class) {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Unit?>): ViewGenerator<DEPENDENCY, VIEW> {
+            request.observable.value = FormState.success(Unit)
             return ViewGenerator.empty()
         }
     }
@@ -200,6 +201,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     //List
     this += object : FormEncoder.BaseTypeInterceptor<List<Any?>>(List::class) {
+        override fun matchesTyped(request: FormRequest<List<Any?>>): Boolean = request.scale >= ViewSize.Full
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<List<Any?>>): ViewGenerator<DEPENDENCY, VIEW> {
             val type = request.type as ListMirror<Any?>
             return ListFormViewGenerator(
