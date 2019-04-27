@@ -6,11 +6,14 @@ import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.launchConfirmationDialog
 import com.lightningkite.koolui.builders.text
 import com.lightningkite.koolui.concepts.Animation
+import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
+import com.lightningkite.mirror.archive.database.Database
+import com.lightningkite.mirror.archive.model.Reference
 import com.lightningkite.mirror.archive.model.Uuid
 import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.form.form.*
@@ -220,6 +223,22 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     //Map
 
 
+
+    //Reference
+    this += object : FormEncoder.BaseTypeInterceptor<Reference<*>>(Reference::class){
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest <Reference<*>>): ViewGenerator<DEPENDENCY, VIEW> {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+    }
+
+    //Database
+    this += object : FormEncoder.BaseTypeInterceptor<Database<*>>(Database::class){
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Database<*>>): ViewGenerator<DEPENDENCY, VIEW> {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+    }
+
+
     //Enum
     this += object : FormEncoder.BaseInterceptor(matchPriority = 1f) {
         override fun <T> matches(request: FormRequest<T>): Boolean = request.type.base.enumValues != null
@@ -293,7 +312,12 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                                         observable = form.value,
                                         scale = request.scale
                                 ).getVG<DEPENDENCY, VIEW>()
-                            } else ViewGenerator.empty()
+                            } else object : ViewGenerator<DEPENDENCY, VIEW> {
+                                override fun generate(dependency: DEPENDENCY): VIEW = dependency.text(
+                                        text = request.general.nullString,
+                                        importance = Importance.Low
+                                )
+                            }
                             vg.generate(dependency) to Animation.Fade
                         })
                     }.apply {

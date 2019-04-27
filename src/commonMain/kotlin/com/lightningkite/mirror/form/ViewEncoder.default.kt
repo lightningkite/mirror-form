@@ -1,5 +1,7 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.kommon.exception.stackTraceString
+import com.lightningkite.koolui.async.UI
 import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.space
 import com.lightningkite.koolui.builders.text
@@ -12,13 +14,23 @@ import com.lightningkite.lokalize.time.Date
 import com.lightningkite.lokalize.time.DateTime
 import com.lightningkite.lokalize.time.Time
 import com.lightningkite.lokalize.time.TimeStamp
+import com.lightningkite.mirror.archive.database.Database
+import com.lightningkite.mirror.archive.database.get
+import com.lightningkite.mirror.archive.model.HasId
+import com.lightningkite.mirror.archive.model.Reference
+import com.lightningkite.mirror.archive.model.ReferenceMirror
 import com.lightningkite.mirror.archive.model.Uuid
 import com.lightningkite.mirror.form.view.*
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.ConstantObservableProperty
 import com.lightningkite.reacktive.property.ObservableProperty
+import com.lightningkite.reacktive.property.StandardObservableProperty
+import com.lightningkite.reacktive.property.lifecycle.bind
 import com.lightningkite.reacktive.property.transform
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
 import kotlin.reflect.KClass
@@ -63,7 +75,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     string(TimeStamp::class) { DefaultLocale.renderTimeStamp(it) }
 
     string(KClass::class) { it.type.localName.humanify() }
-    string(MirrorType::class) { it.base.localName.humanify() + if(it.isNullable) " (Optional)" else "" }
+    string(MirrorType::class) { it.base.localName.humanify() + if (it.isNullable) " (Optional)" else "" }
     string(MirrorClass::class) { it.localName.humanify() }
     string(MirrorClass.Field::class) { it.name }
 
@@ -121,6 +133,57 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
             val type = request.type as MapMirror<Any?, Any?>
             val transformed: ObservableProperty<List<Pair<Any?, Any?>>> = request.observable.transform { it.entries.map { it.toPair() } }
             return request.sub(ListMirror(PairMirror(type.KMirror, type.VMirror)), transformed, scale = request.scale).getVG()
+        }
+    }
+
+    //Reference
+    this += object : ViewEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
+
+        override fun matchesTyped(request: DisplayRequest<Reference<*>?>): Boolean {
+            @Suppress("UNCHECKED_CAST") val t = (request.type as ReferenceMirror<*>).MODELMirror.nullable as MirrorType<Any?>
+            return request.general.databases[t] != null
+        }
+
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
+            @Suppress("UNCHECKED_CAST") val t = (request.type as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
+                    ?: throw IllegalArgumentException()
+
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    val loading = StandardObservableProperty(false)
+                    val item = StandardObservableProperty<Any?>(null)
+                    work(
+                            view = card(request.sub(
+                                    type = t.nullable,
+                                    observable = item,
+                                    scale = request.scale
+                            ).getVG<DEPENDENCY, VIEW>().generate(dependency)),
+                            isWorking = loading
+                    ).apply {
+                        lifecycle.bind(request.observable) { ref ->
+                            if (ref == null) {
+                                item.value = null
+                            } else {
+                                GlobalScope.launch(Dispatchers.UI) {
+                                    loading.value = true
+                                    item.value = try {
+                                        database.get(field = idField, value = ref.key)
+                                    } catch(t: Throwable){
+                                        //TODO: Maybe a failed-to-load message?
+                                        println(t.stackTraceString())
+                                        null
+                                    }
+                                    loading.value = false
+                                }
+                            }
+                            Unit
+                        }
+                        Unit
+                    }
+                }
+            }
         }
     }
 
@@ -280,6 +343,17 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                     }
                 }
             }
+        }
+    }
+
+    //Give up
+    this += object : ViewEncoder.BaseInterceptor(matchPriority = Float.NEGATIVE_INFINITY) {
+        override fun <T> matches(request: DisplayRequest<T>): Boolean = true
+
+        override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(
+                request: DisplayRequest<T>
+        ) = object : ViewGenerator<DEPENDENCY, VIEW> {
+            override fun generate(dependency: DEPENDENCY): VIEW = dependency.text(text = "No form generator found")
         }
     }
 

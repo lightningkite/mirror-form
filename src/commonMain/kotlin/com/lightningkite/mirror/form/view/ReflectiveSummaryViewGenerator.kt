@@ -1,8 +1,13 @@
-package com.lightningkite.mirror.form
+package com.lightningkite.mirror.form.view
 
+import com.lightningkite.kommon.collection.push
 import com.lightningkite.koolui.builders.vertical
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
+import com.lightningkite.mirror.form.DisplayRequest
+import com.lightningkite.mirror.form.DisplayViewGenerator
+import com.lightningkite.mirror.form.ViewEncoder
+import com.lightningkite.mirror.form.humanify
 import com.lightningkite.mirror.info.MirrorClass
 import com.lightningkite.reacktive.property.transform
 
@@ -20,10 +25,19 @@ class ReflectiveSummaryViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VI
     }.toList()
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-        frame(vertical {
+        val v = frame(vertical {
             for ((field, generator) in fields) {
                 -entryContext(label = field.name.humanify(), field = generator.generate(dependency))
             }
         })
+        if(request.clickable){
+            v.clickable {
+                val displayValue = request.observable.value
+                request.general.stack<DEPENDENCY, VIEW>().push(DisplayViewGenerator(
+                        data = displayValue,
+                        type = request.type
+                ))
+            }
+        } else v
     }
 }

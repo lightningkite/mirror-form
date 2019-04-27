@@ -24,7 +24,6 @@ object ViewEncoder {
             override val matchPriority: Float = 0f
     ) : Interceptor
 
-    //TODO: Implies Not Null
     abstract class BaseTypeInterceptor<T : Any>(
             override val requiresType: KClass<T>,
             override val matchPriority: Float = 0f
@@ -37,6 +36,20 @@ object ViewEncoder {
 
         @Suppress("UNCHECKED_CAST")
         final override fun <T2, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T2>): ViewGenerator<DEPENDENCY, VIEW> = generateTyped(request as DisplayRequest<T>)
+    }
+
+    abstract class BaseNullableTypeInterceptor<T : Any>(
+            override val requiresType: KClass<T>,
+            override val matchPriority: Float = 0f
+    ) : Interceptor {
+        open fun matchesTyped(request: DisplayRequest<T?>): Boolean = true
+        abstract fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<T?>): ViewGenerator<DEPENDENCY, VIEW>
+
+        @Suppress("UNCHECKED_CAST")
+        final override fun <T2> matches(request: DisplayRequest<T2>): Boolean = matchesTyped(request as DisplayRequest<T?>)
+
+        @Suppress("UNCHECKED_CAST")
+        final override fun <T2, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T2>): ViewGenerator<DEPENDENCY, VIEW> = generateTyped(request as DisplayRequest<T?>)
     }
 
     @Deprecated("x")

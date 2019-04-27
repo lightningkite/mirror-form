@@ -126,7 +126,7 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         horizontal {
             +space(1f)
             -imageButton(
-                    imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                    imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withSizing(),
                     label = "Undo",
                     importance = Importance.Low,
                     onClick = {
@@ -136,7 +136,7 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     }
             )
             -imageButton(
-                    imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                    imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withSizing(),
                     label = "Add",
                     importance = Importance.Low,
                     onClick = {
