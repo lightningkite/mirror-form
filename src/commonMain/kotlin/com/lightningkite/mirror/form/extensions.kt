@@ -10,7 +10,7 @@ import com.lightningkite.reacktive.property.ObservableProperty
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DEPENDENCY.display(
         data: T,
         type: MirrorType<T>,
-        generalRequest: GeneralRequest = GeneralRequest(),
+        generalRequest: GeneralRequest,// = GeneralRequest(),
         scale: ViewSize = ViewSize.Full
 ) = ViewEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(DisplayRequest(
         general = generalRequest,
@@ -22,7 +22,7 @@ fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DEPENDENCY.display(
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DEPENDENCY.display(
         observable: ObservableProperty<T>,
         type: MirrorType<T>,
-        generalRequest: GeneralRequest = GeneralRequest(),
+        generalRequest: GeneralRequest,// = GeneralRequest(),
         scale: ViewSize = ViewSize.Full
 ) = ViewEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(DisplayRequest(
         general = generalRequest,
@@ -34,7 +34,7 @@ fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DEPENDENCY.display(
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DEPENDENCY.form(
         observable: MutableObservableProperty<FormState<T>>,
         type: MirrorType<T>,
-        generalRequest: GeneralRequest = GeneralRequest(),
+        generalRequest: GeneralRequest,// = GeneralRequest(),
         scale: ViewSize = ViewSize.Full
 ) = FormEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(FormRequest(
         general = generalRequest,
@@ -48,7 +48,7 @@ fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DEPENDENCY.form(
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DisplayViewGenerator(
         data: T,
         type: MirrorType<T>,
-        generalRequest: GeneralRequest = GeneralRequest(),
+        generalRequest: GeneralRequest,// = GeneralRequest(),
         scale: ViewSize = ViewSize.Full
 ) = ViewEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(DisplayRequest(
         general = generalRequest,
@@ -60,7 +60,7 @@ fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DisplayViewGenerator(
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DisplayViewGenerator(
         observable: ObservableProperty<T>,
         type: MirrorType<T>,
-        generalRequest: GeneralRequest = GeneralRequest(),
+        generalRequest: GeneralRequest,// = GeneralRequest(),
         scale: ViewSize = ViewSize.Full
 ) = ViewEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(DisplayRequest(
         general = generalRequest,
@@ -72,7 +72,7 @@ fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> DisplayViewGenerator(
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> PartFormViewGenerator(
         observable: MutableObservableProperty<FormState<T>>,
         type: MirrorType<T>,
-        generalRequest: GeneralRequest = GeneralRequest(),
+        generalRequest: GeneralRequest,// = GeneralRequest(),
         scale: ViewSize = ViewSize.Full
 ) = FormEncoder.getViewGenerator<T, DEPENDENCY, VIEW>(FormRequest(
         general = generalRequest,

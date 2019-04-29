@@ -1,4 +1,4 @@
-package com.lightningkite.mirror.form
+package com.lightningkite.mirror.form.info
 
 fun String.humanify(): String {
     if(this.isEmpty()) return ""

@@ -1,4 +1,4 @@
-package com.lightningkite.mirror.form
+package com.lightningkite.mirror.form.info
 
 @Target(AnnotationTarget.FIELD)
 annotation class FormBooleanStrings(val on: String, val off: String)

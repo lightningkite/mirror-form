@@ -66,6 +66,7 @@ data class FormRequest<T>(
             type = type,
             scale = scale,
             owningField = owningField,
+            clickable = false,
             observable = observable
     )
 
@@ -80,6 +81,7 @@ data class FormRequest<T>(
             type = type,
             scale = scale,
             owningField = owningField,
+            clickable = false,
             observable = observable
     )
 
@@ -88,6 +90,7 @@ data class FormRequest<T>(
             type = type,
             scale = scale,
             owningField = owningField,
+            clickable = false,
             observable = observable.transform { it.valueOrNull ?: default }
     )
 
@@ -96,6 +99,7 @@ data class FormRequest<T>(
             type = type.nullable,
             scale = scale,
             owningField = owningField,
+            clickable = false,
             observable = observable.transform { it.valueOrNull }
     )
 

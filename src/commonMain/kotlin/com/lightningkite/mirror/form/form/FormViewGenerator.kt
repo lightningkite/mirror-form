@@ -10,6 +10,7 @@ import com.lightningkite.koolui.image.withSizing
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.FormState
+import com.lightningkite.mirror.form.GeneralRequest
 import com.lightningkite.mirror.form.PartFormViewGenerator
 import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.reacktive.property.MutableObservableProperty
@@ -19,7 +20,7 @@ import com.lightningkite.reacktive.property.StandardObservableProperty
 class FormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val wraps: ViewGenerator<DEPENDENCY, VIEW>,
         val obs: ObservableProperty<FormState<T>>,
-        val onComplete: (T) -> Unit
+        val onComplete: FormViewGenerator<T, DEPENDENCY, VIEW>.(T) -> Unit
 ) : ViewGenerator<DEPENDENCY, VIEW> by wraps {
 
     override fun generateActions(dependency: DEPENDENCY): VIEW? = with(dependency) {
@@ -50,11 +51,12 @@ class FormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
 fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> FormViewGenerator(
         type: MirrorType<T>,
         startingWith: FormState<T> = FormState.empty(),
-        onComplete: (T) -> Unit
+        generalRequest: GeneralRequest,// = GeneralRequest(),
+        onComplete: FormViewGenerator<T, DEPENDENCY, VIEW>.(T) -> Unit
 ): FormViewGenerator<T, DEPENDENCY, VIEW> {
     val obs: MutableObservableProperty<FormState<T>> = StandardObservableProperty(startingWith)
     return FormViewGenerator(
-            wraps = PartFormViewGenerator(obs, type),
+            wraps = PartFormViewGenerator(obs, type, generalRequest = generalRequest),
             obs = obs,
             onComplete = onComplete
     )

@@ -1,4 +1,4 @@
-package com.lightningkite.mirror.form
+package com.lightningkite.mirror.form.info
 
 import com.lightningkite.mirror.archive.model.Sort
 import com.lightningkite.mirror.info.MirrorAnnotation
@@ -6,7 +6,7 @@ import com.lightningkite.mirror.info.MirrorClass
 
 
 @Target(AnnotationTarget.FIELD)
-annotation class DefaultSort(val ascending: Boolean = true)
+annotation class FormDefaultSort(val ascending: Boolean = true)
 
 val MirrorClass<*>.defaultSort: Sort<*, *>?
     get() {
@@ -15,7 +15,7 @@ val MirrorClass<*>.defaultSort: Sort<*, *>?
             val sortAnnotation = field.annotations
                     .asSequence()
                     .mapNotNull { it as? MirrorAnnotation }
-                    .find { it.annotationType == DefaultSort::class }
+                    .find { it.annotationType == FormDefaultSort::class }
             if (sortAnnotation != null) {
                 val asc = sortAnnotation.asMap()["ascending"] as? Boolean ?: true
                 return Sort(field, asc)

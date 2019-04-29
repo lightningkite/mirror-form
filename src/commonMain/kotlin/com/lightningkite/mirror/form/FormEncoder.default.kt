@@ -1,7 +1,11 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.kommon.collection.pop
+import com.lightningkite.kommon.collection.push
+import com.lightningkite.kommon.exception.stackTraceString
 import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
+import com.lightningkite.koolui.async.UI
 import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.launchConfirmationDialog
 import com.lightningkite.koolui.builders.text
@@ -13,10 +17,15 @@ import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
+import com.lightningkite.mirror.archive.database.get
+import com.lightningkite.mirror.archive.model.HasId
 import com.lightningkite.mirror.archive.model.Reference
+import com.lightningkite.mirror.archive.model.ReferenceMirror
 import com.lightningkite.mirror.archive.model.Uuid
 import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.form.form.*
+import com.lightningkite.mirror.form.info.humanify
+import com.lightningkite.mirror.form.other.DatabaseVG
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.MutableObservableListFromProperty
@@ -24,7 +33,11 @@ import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty
 import com.lightningkite.reacktive.property.TransformMutableObservableProperty
+import com.lightningkite.reacktive.property.lifecycle.bind
 import com.lightningkite.reacktive.property.transform
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
 
@@ -168,10 +181,10 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                     button(
                             label = request.observable.perfectNonNull(Uuid.randomUUID4()).transform { it.toString() },
                             onClick = {
-                                if(request.observable.value.valueOrNull == null){
+                                if (request.observable.value.valueOrNull == null) {
                                     request.observable.value = FormState.success(Uuid.randomUUID4())
                                 } else {
-                                    launchConfirmationDialog(message = "Do you want to regenerate this ID?"){
+                                    launchConfirmationDialog(message = "Do you want to regenerate this ID?") {
                                         request.observable.value = FormState.success(Uuid.randomUUID4())
                                     }
                                 }
@@ -214,7 +227,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                     editViewGenerator = { start, onResult ->
                         val obs = StandardObservableProperty<FormState<Any?>>(if (start == null) FormState.empty() else FormState.success(start))
                         val underlyingVg = request.sub(type = type.EMirror, observable = obs, scale = ViewSize.Full).getVG<DEPENDENCY, VIEW>()
-                        FormViewGenerator(underlyingVg, obs, onResult)
+                        FormViewGenerator(underlyingVg, obs) { onResult(it) }
                     }
             )
         }
@@ -223,18 +236,75 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     //Map
 
 
-
     //Reference
-    this += object : FormEncoder.BaseTypeInterceptor<Reference<*>>(Reference::class){
-        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest <Reference<*>>): ViewGenerator<DEPENDENCY, VIEW> {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-    }
+    this += object : FormEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
 
-    //Database
-    this += object : FormEncoder.BaseTypeInterceptor<Database<*>>(Database::class){
-        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Database<*>>): ViewGenerator<DEPENDENCY, VIEW> {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        override fun matchesTyped(request: FormRequest<Reference<*>?>): Boolean {
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            return request.general.databases[t] != null && request.scale > ViewSize.OneLine
+        }
+
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<HasId>
+            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
+                    ?: throw IllegalArgumentException()
+
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    val loading = StandardObservableProperty(false)
+                    val item = StandardObservableProperty<HasId?>(null)
+                    work(
+                            view = card(DisplayRequest(
+                                    general = request.general,
+                                    type = t.nullable,
+                                    observable = item,
+                                    clickable = false,
+                                    scale = request.scale
+                            ).getVG<DEPENDENCY, VIEW>().generate(dependency)).clickable {
+                                val stack = request.general.stack<DEPENDENCY, VIEW>()
+                                stack.push(
+                                        DatabaseVG(
+                                                stack = stack,
+                                                type = t,
+                                                database = database,
+                                                generalRequest = request.general,
+                                                onSelect = {
+                                                    stack.pop()
+                                                    request.observable.value = FormState.success(Reference<HasId>(it.id))
+                                                }
+                                        )
+                                )
+                            }.altClickable {
+                                if (request.type.isNullable) {
+                                    request.observable.value = FormState.success(null)
+                                }
+                            },
+                            isWorking = loading
+                    ).apply {
+                        lifecycle.bind(request.observable) { formState ->
+                            val ref = formState.valueOrNull
+                            if (ref == null) {
+                                item.value = null
+                            } else {
+                                GlobalScope.launch(Dispatchers.UI) {
+                                    loading.value = true
+                                    item.value = try {
+                                        database.get(field = idField, value = ref.key)
+                                    } catch (t: Throwable) {
+                                        //TODO: Maybe a failed-to-load message?
+                                        println(t.stackTraceString())
+                                        null
+                                    }
+                                    loading.value = false
+                                }
+                            }
+                            Unit
+                        }
+                        Unit
+                    }
+                }
+            }
         }
     }
 
@@ -252,16 +322,32 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                     picker(
                             options = options.toList().asObservableList(),
                             selected = (request.observable as MutableObservableProperty<FormState<Any?>>).perfect(options.first()),
-                            makeView = { itemObs ->
-                                text(itemObs.transform {
-                                    ((it as? Enum<*>)?.name ?: it?.toString())?.humanify() ?: request.general.nullString
-                                })
-                            }
+                            toString = { ((it as? Enum<*>)?.name ?: it?.toString())?.humanify() ?: request.general.nullString }
                     )
                 }
             }
         }
 
+    }
+
+    //MirrorClass.Field
+    this += object : FormEncoder.BaseNullableTypeInterceptor<MirrorClass.Field<*, *>>(MirrorClass.Field::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<MirrorClass.Field<*, *>?>): ViewGenerator<DEPENDENCY, VIEW> {
+            val castType = request.type.base as MirrorClassFieldMirror<*, *>
+            val allFields = castType.OwnerMirror.base.fields.toList() as List<MirrorClass.Field<*, *>>
+            val nnOptions = allFields.filter { it.type isA castType.ValueMirror }
+            val options = if (request.type.isNullable) listOf(null) + nnOptions.toList() else nnOptions.toList()
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    @Suppress("UNCHECKED_CAST")
+                    picker(
+                            options = options.asObservableList(),
+                            selected = request.observable.perfect(options.first()),
+                            toString = { it?.name?.humanify() ?: request.general.nullString }
+                    )
+                }
+            }
+        }
     }
 
     //MirrorType
@@ -276,9 +362,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                     picker(
                             options = options.asObservableList(),
                             selected = request.observable.perfect(options.first()),
-                            makeView = { itemObs ->
-                                text(itemObs.transform { it?.localName?.humanify() ?: request.general.nullString })
-                            }
+                            toString = { it?.localName?.humanify() ?: request.general.nullString }
                     )
                 }
             }
@@ -332,6 +416,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
     this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
         override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.isEmpty()
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            request.observable.value = FormState.success(Breaker.fold(request.type, arrayOf()))
             return ViewGenerator.empty()
         }
     }
@@ -402,7 +487,7 @@ fun <T> MutableObservableProperty<FormState<T>>.perfect(default: T) = this.trans
 )
 
 fun <T> MutableObservableProperty<FormState<T>>.perfectNonNull(default: T): TransformMutableObservableProperty<FormState<T>, T> {
-    if(this.value !is FormState.Success) {
+    if (this.value !is FormState.Success) {
         this.value = FormState.success(default)
     }
     return this.transform(

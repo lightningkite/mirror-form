@@ -20,6 +20,7 @@ import com.lightningkite.mirror.archive.model.HasId
 import com.lightningkite.mirror.archive.model.Reference
 import com.lightningkite.mirror.archive.model.ReferenceMirror
 import com.lightningkite.mirror.archive.model.Uuid
+import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.form.view.*
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.asObservableList
@@ -140,12 +141,12 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     this += object : ViewEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
 
         override fun matchesTyped(request: DisplayRequest<Reference<*>?>): Boolean {
-            @Suppress("UNCHECKED_CAST") val t = (request.type as ReferenceMirror<*>).MODELMirror.nullable as MirrorType<Any?>
-            return request.general.databases[t] != null
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            return request.general.databases[t] != null && request.scale > ViewSize.OneLine
         }
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
-            @Suppress("UNCHECKED_CAST") val t = (request.type as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
             @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
             @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
                     ?: throw IllegalArgumentException()
@@ -160,6 +161,57 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                     observable = item,
                                     scale = request.scale
                             ).getVG<DEPENDENCY, VIEW>().generate(dependency)),
+                            isWorking = loading
+                    ).apply {
+                        lifecycle.bind(request.observable) { ref ->
+                            if (ref == null) {
+                                item.value = null
+                            } else {
+                                GlobalScope.launch(Dispatchers.UI) {
+                                    loading.value = true
+                                    item.value = try {
+                                        database.get(field = idField, value = ref.key)
+                                    } catch(t: Throwable){
+                                        //TODO: Maybe a failed-to-load message?
+                                        println(t.stackTraceString())
+                                        null
+                                    }
+                                    loading.value = false
+                                }
+                            }
+                            Unit
+                        }
+                        Unit
+                    }
+                }
+            }
+        }
+    }
+
+    //Reference (one line)
+    this += object : ViewEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
+
+        override fun matchesTyped(request: DisplayRequest<Reference<*>?>): Boolean {
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            return request.general.databases[t] != null && request.scale == ViewSize.OneLine
+        }
+
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
+                    ?: throw IllegalArgumentException()
+
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    val loading = StandardObservableProperty(false)
+                    val item = StandardObservableProperty<Any?>(null)
+                    work(
+                            view = request.sub(
+                                    type = t.nullable,
+                                    observable = item,
+                                    scale = request.scale
+                            ).getVG<DEPENDENCY, VIEW>().generate(dependency),
                             isWorking = loading
                     ).apply {
                         lifecycle.bind(request.observable) { ref ->
@@ -232,7 +284,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
         }
     }
 
-    //Reflective (Single fields)
+    //Reflective (Single field)
     this += object : ViewEncoder.BaseInterceptor(matchPriority = 0f) {
         override fun <T> matches(request: DisplayRequest<T>): Boolean = request.type.base.fields.size == 1
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
@@ -244,6 +296,25 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                     scale = request.scale,
                     owningField = singleField,
                     observable = request.observable.transform { (it as? Any)?.let(singleField.get) }
+            )
+            return defer.getVG()
+        }
+    }
+
+    //Reflective (one-line)
+    this += object : ViewEncoder.BaseNotNullInterceptor(matchPriority = 0f) {
+        override fun <T: Any> matchesNotNull(request: DisplayRequest<T>): Boolean = request.type.base.fields.size >= 2 && request.scale == ViewSize.OneLine
+
+        override fun <T: Any, DEPENDENCY : ViewFactory<VIEW>, VIEW> generateNotNull(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+            @Suppress("UNCHECKED_CAST")
+            val singleField = (request.type as MirrorClass<T>).pickDisplayFields(request).first()
+            @Suppress("UNCHECKED_CAST")
+            val defer = DisplayRequest(
+                    general = request.general,
+                    type = singleField.type.nullable as MirrorType<Any?>,
+                    scale = request.scale,
+                    owningField = singleField,
+                    observable = request.observable.transform { singleField.get(it) }
             )
             return defer.getVG()
         }
@@ -262,7 +333,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
 
     //Reflective (2+ fields, small)
     this += object : ViewEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: DisplayRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size >= 2 && request.scale < ViewSize.Full
+        override fun <T> matches(request: DisplayRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size >= 2 && request.scale == ViewSize.Summary
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             @Suppress("UNCHECKED_CAST")
             return ReflectiveSummaryViewGenerator(

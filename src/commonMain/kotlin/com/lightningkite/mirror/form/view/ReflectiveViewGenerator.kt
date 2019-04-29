@@ -5,7 +5,8 @@ import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.DisplayRequest
 import com.lightningkite.mirror.form.ViewEncoder
-import com.lightningkite.mirror.form.humanify
+import com.lightningkite.mirror.form.info.humanify
+import com.lightningkite.mirror.form.info.needsNoContext
 import com.lightningkite.mirror.form.pickDisplayFields
 import com.lightningkite.mirror.info.MirrorClass
 import com.lightningkite.reacktive.property.transform
@@ -25,7 +26,12 @@ class ReflectiveViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
         frame(vertical {
             for ((field, generator) in fields) {
-                -entryContext(label = field.name.humanify(), field = generator.generate(dependency))
+                if (field.needsNoContext) {
+                    -generator.generate(dependency)
+                } else {
+                    -entryContext(label = field.name.humanify(), field = generator.generate(dependency))
+                }
+
             }
         })
     }

@@ -6,6 +6,7 @@ import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.breaker.PartialBreaker
 import com.lightningkite.mirror.form.*
+import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.info.MirrorClass
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.ObservableProperty

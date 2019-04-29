@@ -1,5 +1,8 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.mirror.form.info.FormEditOnly
+import com.lightningkite.mirror.form.info.FormHidden
+import com.lightningkite.mirror.form.info.FormViewOnly
 import com.lightningkite.mirror.info.MirrorAnnotation
 import com.lightningkite.mirror.info.MirrorClass
 

@@ -7,6 +7,7 @@ import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.*
+import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.info.MirrorRegistry
 import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.reacktive.list.asObservableList
@@ -60,9 +61,7 @@ class PolymorphicFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(priv
                 -picker(
                         options = options.asObservableList(),
                         selected = form.type.perfect(options.first()),
-                        makeView = { itemObs ->
-                            text(itemObs.transform { it?.localName?.humanify() ?: request.general.nullString })
-                        }
+                        toString = { it?.localName?.humanify() ?: request.general.nullString }
                 )
                 val view = swap(subVg.transform { it.generate(dependency) to Animation.Flip })
                 if (request.scale >= ViewSize.Full) +view else -view

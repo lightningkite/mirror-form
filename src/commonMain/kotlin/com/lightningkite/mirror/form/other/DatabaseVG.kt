@@ -1,7 +1,9 @@
 package com.lightningkite.mirror.form.other
 
 import com.lightningkite.kommon.collection.pop
+import com.lightningkite.kommon.collection.popFrom
 import com.lightningkite.kommon.collection.push
+import com.lightningkite.kommon.collection.pushFrom
 import com.lightningkite.kommon.exception.stackTraceString
 import com.lightningkite.koolui.async.UI
 import com.lightningkite.koolui.builders.horizontal
@@ -20,8 +22,7 @@ import com.lightningkite.mirror.archive.model.Condition
 import com.lightningkite.mirror.archive.model.ConditionMirror
 import com.lightningkite.mirror.archive.model.Sort
 import com.lightningkite.mirror.archive.model.SortMirror
-import com.lightningkite.mirror.form.FormState
-import com.lightningkite.mirror.form.display
+import com.lightningkite.mirror.form.*
 import com.lightningkite.mirror.form.form.FormViewGenerator
 import com.lightningkite.mirror.info.AnyMirror
 import com.lightningkite.mirror.info.ComparableMirror
@@ -40,7 +41,11 @@ import kotlinx.coroutines.launch
 class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val stack: MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
         val type: MirrorType<T>,
-        val database: Database<T>
+        val database: Database<T>,
+        val generalRequest: GeneralRequest,// = GeneralRequest(),
+        val onSelect: (T) -> Unit = {
+            stack.push(DisplayViewGenerator(it, type, generalRequest = generalRequest))
+        }
 ) : ViewGenerator<DEPENDENCY, VIEW> {
     override val title: String
         get() = super.title
@@ -56,18 +61,31 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
         vertical {
-            -horizontal {
-                //Filter
-                //
-            }
-
             +refresh(
                     contains = list(
                             data = items,
                             firstIndex = firstIndexObs,
                             lastIndex = lastIndexObs
                     ) { itemObs ->
-                        display(observable = itemObs, type = type)
+                        card(horizontal {
+                            +display(observable = itemObs, type = type, generalRequest = generalRequest, scale = ViewSize.Summary).clickable {
+                                onSelect(itemObs.value)
+                            }
+                            -imageButton(
+                                    imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                                    label = "More",
+                                    importance = Importance.Low,
+                                    onClick = {
+                                        launchSelector(options = listOf(
+                                                "Edit" to {
+                                                },
+                                                "Delete" to {
+                                                }
+                                        ))
+                                    }
+                            )
+                        })
+
                     }.apply {
                         lifecycle.bind(lastIndexObs) {
                             if (it >= items.lastIndex) {
@@ -99,7 +117,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
 
     fun loadMore() {
         val startLoadIndex = loadIndex
-        if(loading.value) return
+        if (loading.value) return
         GlobalScope.launch(Dispatchers.UI) {
             loading.value = true
             try {
@@ -109,7 +127,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                         count = 20,
                         after = items.lastOrNull()
                 )
-                if(startLoadIndex != loadIndex) return@launch
+                if (startLoadIndex != loadIndex) return@launch
 
                 items.addAll(newData)
                 if (newData.isEmpty()) {
@@ -130,9 +148,10 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     label = "Filter",
                     importance = Importance.Low,
                     onClick = {
-                        stack.push(FormViewGenerator(ConditionMirror(type), FormState.success(condition.value)) {
+                        stack.pushFrom(this@DatabaseVG, FormViewGenerator(ConditionMirror(type), FormState.success(condition.value), generalRequest = generalRequest) {
                             condition.value = it
                             reset()
+                            stack.popFrom(this@FormViewGenerator)
                         })
                     }
             )
@@ -142,12 +161,14 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     importance = Importance.Low,
                     onClick = {
                         val sortType: MirrorType<List<Sort<T, *>>> = ListMirror(SortMirror(type, SortMirror.VMirrorMinimal) as MirrorType<Sort<T, *>>)
-                        stack.push(FormViewGenerator<List<Sort<T, *>>, DEPENDENCY, VIEW>(
+                        stack.pushFrom(this@DatabaseVG, FormViewGenerator<List<Sort<T, *>>, DEPENDENCY, VIEW>(
                                 type = sortType,
-                                startingWith = FormState.success(sort.value)
+                                startingWith = FormState.success(sort.value),
+                                generalRequest = generalRequest
                         ) {
                             sort.value = it
                             reset()
+                            stack.popFrom(this@FormViewGenerator)
                         })
                         Unit
                     }
@@ -157,7 +178,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     label = "Add",
                     importance = Importance.Low,
                     onClick = {
-                        stack.push(FormViewGenerator(type) { newItem ->
+                        stack.pushFrom(this@DatabaseVG, FormViewGenerator(type, generalRequest = generalRequest) { newItem ->
                             GlobalScope.launch(Dispatchers.UI) {
                                 addWorking.value = true
                                 try {
@@ -170,6 +191,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                                     )
                                 }
                                 addWorking.value = false
+                                stack.popFrom(this@FormViewGenerator)
                             }
                         })
                     }
