@@ -6,10 +6,7 @@ import com.lightningkite.kommon.collection.push
 import com.lightningkite.kommon.collection.pushFrom
 import com.lightningkite.kommon.exception.stackTraceString
 import com.lightningkite.koolui.async.UI
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.imageButton
-import com.lightningkite.koolui.builders.launchInfoDialog
-import com.lightningkite.koolui.builders.vertical
+import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.image.ImageScaleType
 import com.lightningkite.koolui.image.MaterialIcon
@@ -18,10 +15,7 @@ import com.lightningkite.koolui.image.withSizing
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.archive.database.Database
-import com.lightningkite.mirror.archive.model.Condition
-import com.lightningkite.mirror.archive.model.ConditionMirror
-import com.lightningkite.mirror.archive.model.Sort
-import com.lightningkite.mirror.archive.model.SortMirror
+import com.lightningkite.mirror.archive.model.*
 import com.lightningkite.mirror.form.*
 import com.lightningkite.mirror.form.form.FormViewGenerator
 import com.lightningkite.mirror.info.AnyMirror
@@ -78,8 +72,49 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                                     onClick = {
                                         launchSelector(options = listOf(
                                                 "Edit" to {
+                                                    val oldItem = itemObs.value
+                                                    stack.pushFrom(this@DatabaseVG, FormViewGenerator(
+                                                            type = type,
+                                                            startingWith = FormState.success(oldItem),
+                                                            generalRequest = generalRequest
+                                                    ) { newItem ->
+                                                        GlobalScope.launch(Dispatchers.UI) {
+                                                            try {
+                                                                val result = database.update(
+                                                                        condition = Condition.Equal(oldItem),
+                                                                        operation = Operation.Set(newItem)
+                                                                )
+                                                                val index = items.indexOfFirst { it == oldItem }
+                                                                if(index != -1){
+                                                                    items[index] = newItem
+                                                                }
+                                                            } catch (t: Throwable) {
+                                                                dependency.launchInfoDialog(
+                                                                        title = "Error Updating Item",
+                                                                        message = t.message ?: "Unknown error"
+                                                                )
+                                                            }
+                                                            stack.popFrom(this@FormViewGenerator)
+                                                        }
+                                                    })
                                                 },
                                                 "Delete" to {
+                                                    val oldItem = itemObs.value
+                                                    launchConfirmationDialog {
+                                                        GlobalScope.launch(Dispatchers.UI) {
+                                                            try {
+                                                                val result = database.delete(
+                                                                        condition = Condition.Equal(oldItem)
+                                                                )
+                                                                items.remove(oldItem)
+                                                            } catch (t: Throwable) {
+                                                                dependency.launchInfoDialog(
+                                                                        title = "Error Inserting Item",
+                                                                        message = t.message ?: "Unknown error"
+                                                                )
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                         ))
                                     }
