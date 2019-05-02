@@ -18,13 +18,15 @@ import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.database.get
-import com.lightningkite.mirror.archive.model.HasId
+import com.lightningkite.mirror.archive.model.HasUuid
 import com.lightningkite.mirror.archive.model.Reference
 import com.lightningkite.mirror.archive.model.ReferenceMirror
 import com.lightningkite.mirror.archive.model.Uuid
 import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.form.info.humanify
+import com.lightningkite.mirror.form.info.numberInputType
+import com.lightningkite.mirror.form.info.textInputType
 import com.lightningkite.mirror.form.other.DatabaseVG
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.MutableObservableList
@@ -49,7 +51,7 @@ inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Nu
                     observable = request.observable,
                     toT = toT,
                     allowNull = request.type.isNullable,
-                    numberInputType = inputType,
+                    numberInputType = request.owningField?.numberInputType ?: inputType,
                     decimalPlaces = decimalPlaces
             )
         }
@@ -88,7 +90,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     textField(
                             text = request.observable.perfectNonNull(""),
-                            type = TextInputType.Sentence
+                            type = request.owningField?.textInputType ?: TextInputType.Sentence
                     )
                 }
             }
@@ -245,15 +247,15 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         }
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<HasId>
-            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
-            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
+            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<HasUuid>
+            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasUuid, Uuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasUuid>
                     ?: throw IllegalArgumentException()
 
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     val loading = StandardObservableProperty(false)
-                    val item = StandardObservableProperty<HasId?>(null)
+                    val item = StandardObservableProperty<HasUuid?>(null)
                     work(
                             view = card(DisplayRequest(
                                     general = request.general,
@@ -271,7 +273,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                                                 generalRequest = request.general,
                                                 onSelect = {
                                                     stack.pop()
-                                                    request.observable.value = FormState.success(Reference<HasId>(it.id))
+                                                    request.observable.value = FormState.success(Reference<HasUuid>(it.id))
                                                 }
                                         )
                                 )

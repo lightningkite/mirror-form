@@ -16,7 +16,7 @@ import com.lightningkite.lokalize.time.Time
 import com.lightningkite.lokalize.time.TimeStamp
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.database.get
-import com.lightningkite.mirror.archive.model.HasId
+import com.lightningkite.mirror.archive.model.HasUuid
 import com.lightningkite.mirror.archive.model.Reference
 import com.lightningkite.mirror.archive.model.ReferenceMirror
 import com.lightningkite.mirror.archive.model.Uuid
@@ -147,8 +147,8 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
             @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
-            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
-            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
+            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasUuid, Uuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasUuid>
                     ?: throw IllegalArgumentException()
 
             return object : ViewGenerator<DEPENDENCY, VIEW> {
@@ -198,8 +198,8 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
             @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
-            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasId, Uuid>
-            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasId>
+            @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasUuid, Uuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasUuid>
                     ?: throw IllegalArgumentException()
 
             return object : ViewGenerator<DEPENDENCY, VIEW> {
