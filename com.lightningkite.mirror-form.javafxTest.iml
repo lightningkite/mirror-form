@@ -5,8 +5,8 @@
       <configuration version="3" platform="JVM 1.6" useProjectSettings="false" isTestModule="true" externalProjectId=":mirror-form">
         <sourceSets>
           <sourceSet>com.lightningkite.mirror-form.javafxMain</sourceSet>
-          <sourceSet>com.lightningkite.mirror-form.commonMain</sourceSet>
           <sourceSet>com.lightningkite.mirror-form.commonTest</sourceSet>
+          <sourceSet>com.lightningkite.mirror-form.commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <compilerSettings />
