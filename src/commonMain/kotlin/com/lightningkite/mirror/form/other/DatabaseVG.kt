@@ -22,6 +22,7 @@ import com.lightningkite.mirror.info.AnyMirror
 import com.lightningkite.mirror.info.ComparableMirror
 import com.lightningkite.mirror.info.ListMirror
 import com.lightningkite.mirror.info.MirrorType
+import com.lightningkite.mirror.request.RemoteExceptionData
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.WrapperObservableList
 import com.lightningkite.reacktive.property.MutableObservableProperty
@@ -168,6 +169,9 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                 if (newData.isEmpty()) {
                     anyLeft = false
                 }
+            } catch (t: RemoteExceptionData.Thrown) {
+                println("Remote exception:")
+                println(t.stackTraceString())
             } catch (t: Throwable) {
                 println(t.stackTraceString())
             }
