@@ -40,6 +40,7 @@ import com.lightningkite.reacktive.property.transform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.StructureKind
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
 
@@ -416,7 +417,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     //Reflective (no fields)
     this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.isEmpty()
+        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == StructureKind.CLASS && !request.type.isNullable && request.type.base.fields.isEmpty()
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             request.observable.value = FormState.success(Breaker.fold(request.type, arrayOf()))
             return ViewGenerator.empty()
@@ -425,7 +426,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     //Reflective (1 field)
     this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size == 1
+        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == StructureKind.CLASS && !request.type.isNullable && request.type.base.fields.size == 1
         @Suppress("UNCHECKED_CAST")
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             val mirrorClass = request.type.base as MirrorClass<Any>
@@ -445,7 +446,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     //Reflective (Many fields)
     this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: FormRequest<T>): Boolean = !request.type.isNullable && request.type.base.fields.size > 1 && request.scale >= ViewSize.Full
+        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == StructureKind.CLASS && !request.type.isNullable && request.type.base.fields.size > 1 && request.scale >= ViewSize.Full
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             @Suppress("UNCHECKED_CAST")
             return ReflectiveFormViewGenerator(request as FormRequest<Any>)
