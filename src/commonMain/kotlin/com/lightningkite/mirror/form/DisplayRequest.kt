@@ -1,5 +1,6 @@
 package com.lightningkite.mirror.form
 
+import com.lightningkite.kommon.native.ensureNeverFrozen
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.info.MirrorClass
@@ -14,6 +15,9 @@ data class DisplayRequest<T>(
         val clickable: Boolean = true,
         val observable: ObservableProperty<T>
 ) : CommonRequest<T> {
+    init {
+        ensureNeverFrozen()
+    }
 
     @Suppress("UNCHECKED_CAST")
     fun <S> child(

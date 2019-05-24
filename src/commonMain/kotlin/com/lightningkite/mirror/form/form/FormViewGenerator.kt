@@ -12,6 +12,7 @@ import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.FormState
 import com.lightningkite.mirror.form.GeneralRequest
 import com.lightningkite.mirror.form.PartFormViewGenerator
+import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.mirror.request.Request
 import com.lightningkite.reacktive.property.MutableObservableProperty
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 class FormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val wraps: ViewGenerator<DEPENDENCY, VIEW>,
         val obs: ObservableProperty<FormState<T>>,
+        override val title: String = "",
         val onComplete: FormViewGenerator<T, DEPENDENCY, VIEW>.(T) -> Unit
 ) : ViewGenerator<DEPENDENCY, VIEW> by wraps {
 
@@ -63,6 +65,7 @@ fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> FormViewGenerator(
     return FormViewGenerator(
             wraps = PartFormViewGenerator(obs, type, generalRequest = generalRequest),
             obs = obs,
+            title = type.base.localName.humanify(),
             onComplete = onComplete
     )
 }
