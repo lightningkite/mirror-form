@@ -5,16 +5,20 @@ import com.lightningkite.kommon.collection.push
 import com.lightningkite.kommon.exception.stackTraceString
 import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
+import com.lightningkite.koolui.Location
 import com.lightningkite.koolui.async.UI
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.launchConfirmationDialog
-import com.lightningkite.koolui.builders.text
+import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
+import com.lightningkite.koolui.geometry.AlignPair
+import com.lightningkite.koolui.image.MaterialIcon
+import com.lightningkite.koolui.image.color
+import com.lightningkite.koolui.image.withSizing
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
+import com.lightningkite.lokalize.location.Geohash
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.database.get
@@ -32,11 +36,9 @@ import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.MutableObservableListFromProperty
 import com.lightningkite.reacktive.list.asObservableList
-import com.lightningkite.reacktive.property.MutableObservableProperty
-import com.lightningkite.reacktive.property.StandardObservableProperty
-import com.lightningkite.reacktive.property.TransformMutableObservableProperty
+import com.lightningkite.reacktive.property.*
 import com.lightningkite.reacktive.property.lifecycle.bind
-import com.lightningkite.reacktive.property.transform
+import com.lightningkite.reacktive.property.lifecycle.listen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -198,6 +200,13 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         }
     }
 
+    this += object : FormEncoder.BaseTypeInterceptor<Geohash>(Geohash::class) {
+        override fun matchesTyped(request: FormRequest<Geohash>): Boolean = request.scale >= ViewSize.Summary
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Geohash>): ViewGenerator<DEPENDENCY, VIEW> {
+            return GeohashFormVG(request.observable)
+        }
+    }
+
 
 //    string(KClass::class) { it.type.localName.humanify() }
 //    string(MirrorClass::class) { it.localName.humanify() }
@@ -325,7 +334,9 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                     picker(
                             options = options.toList().asObservableList(),
                             selected = (request.observable as MutableObservableProperty<FormState<Any?>>).perfect(options.first()),
-                            toString = { ((it as? Enum<*>)?.name ?: it?.toString())?.humanify() ?: request.general.nullString }
+                            toString = {
+                                ((it as? Enum<*>)?.name ?: it?.toString())?.humanify() ?: request.general.nullString
+                            }
                     )
                 }
             }

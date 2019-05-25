@@ -1,15 +1,22 @@
 package com.lightningkite.mirror.form
 
 import com.lightningkite.kommon.exception.stackTraceString
+import com.lightningkite.kommon.string.Uri
+import com.lightningkite.koolui.ExternalAccess
+import com.lightningkite.koolui.Location
+import com.lightningkite.koolui.UIPlatform
 import com.lightningkite.koolui.async.UI
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.space
-import com.lightningkite.koolui.builders.text
-import com.lightningkite.koolui.builders.vertical
+import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Animation
+import com.lightningkite.koolui.concepts.Importance
+import com.lightningkite.koolui.current
+import com.lightningkite.koolui.image.MaterialIcon
+import com.lightningkite.koolui.image.color
+import com.lightningkite.koolui.image.withSizing
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.DefaultLocale
+import com.lightningkite.lokalize.location.Geohash
 import com.lightningkite.lokalize.time.Date
 import com.lightningkite.lokalize.time.DateTime
 import com.lightningkite.lokalize.time.Time
@@ -24,13 +31,11 @@ import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.form.view.*
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.asObservableList
-import com.lightningkite.reacktive.property.ConstantObservableProperty
-import com.lightningkite.reacktive.property.ObservableProperty
-import com.lightningkite.reacktive.property.StandardObservableProperty
+import com.lightningkite.reacktive.property.*
 import com.lightningkite.reacktive.property.lifecycle.bind
-import com.lightningkite.reacktive.property.transform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
@@ -79,6 +84,47 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     string(MirrorType::class) { it.base.localName.humanify() + if (it.isNullable) " (Optional)" else "" }
     string(MirrorClass::class) { it.localName.humanify() }
     string(MirrorClass.Field::class) { it.name }
+
+    this += object : ViewEncoder.BaseTypeInterceptor<Geohash>(Geohash::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Geohash>): ViewGenerator<DEPENDENCY, VIEW> {
+            return object : ViewGenerator<DEPENDENCY, VIEW> {
+                val geocoded = StandardObservableProperty("")
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                    horizontal {
+                        +text(
+                                text = CombineObservableProperty2(request.observable, geocoded) { hash, coded ->
+                                    if (coded.isNotEmpty()) {
+                                        coded
+                                    } else {
+                                        "${hash.latitude}, ${hash.longitude}"
+                                    }
+                                }
+                        ).apply {
+                            lifecycle.bind(request.observable) {
+                                GlobalScope.launch(Dispatchers.UI) {
+                                    var lastValue: Geohash? = it
+                                    while (lastValue != request.observable.value) {
+                                        lastValue = request.observable.value
+                                        delay(1000)
+                                    }
+                                    geocoded.value = Location.getAddress(request.observable.value) ?: ""
+                                }
+                            }
+                        }
+                        -imageButton(MaterialIcon.map.color(colorSet.foreground).withSizing(), "Open Map", importance = Importance.Low) {
+                            when(UIPlatform.current){
+                                UIPlatform.IOS -> ExternalAccess.openUri(Uri("http://maps.apple.com/?q=Place&ll=${request.observable.value.latitude},${request.observable.value.longitude}"))
+                                UIPlatform.Android,
+                                UIPlatform.Virtual -> ExternalAccess.openUri(Uri("geo:${request.observable.value.latitude},${request.observable.value.longitude}"))
+                                else -> ExternalAccess.openUri(Uri("https://www.google.com/maps/search/?api=1&query=${request.observable.value.latitude},${request.observable.value.longitude}"))
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
 
     this += object : ViewEncoder.BaseTypeInterceptor<Pair<Any?, Any?>>(Pair::class) {
         override fun matchesTyped(request: DisplayRequest<Pair<Any?, Any?>>): Boolean = request.scale >= ViewSize.Summary
@@ -171,7 +217,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                     loading.value = true
                                     item.value = try {
                                         database.get(field = idField, value = ref.key)
-                                    } catch(t: Throwable){
+                                    } catch (t: Throwable) {
                                         //TODO: Maybe a failed-to-load message?
                                         println(t.stackTraceString())
                                         null
@@ -222,7 +268,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                     loading.value = true
                                     item.value = try {
                                         database.get(field = idField, value = ref.key)
-                                    } catch(t: Throwable){
+                                    } catch (t: Throwable) {
                                         //TODO: Maybe a failed-to-load message?
                                         println(t.stackTraceString())
                                         null
@@ -303,9 +349,9 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
 
     //Reflective (one-line)
     this += object : ViewEncoder.BaseNotNullInterceptor(matchPriority = 0f) {
-        override fun <T: Any> matchesNotNull(request: DisplayRequest<T>): Boolean = request.type.base.fields.size >= 2 && request.scale == ViewSize.OneLine
+        override fun <T : Any> matchesNotNull(request: DisplayRequest<T>): Boolean = request.type.base.fields.size >= 2 && request.scale == ViewSize.OneLine
 
-        override fun <T: Any, DEPENDENCY : ViewFactory<VIEW>, VIEW> generateNotNull(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
+        override fun <T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW> generateNotNull(request: DisplayRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             @Suppress("UNCHECKED_CAST")
             val singleField = (request.type as MirrorClass<T>).pickDisplayFields(request).first()
             @Suppress("UNCHECKED_CAST")
