@@ -6,7 +6,7 @@ import java.util.*
 plugins {
     kotlin("multiplatform") version "1.3.21"
     `maven-publish`
-    id("com.android.library")// version "3.3.1"
+    id("com.android.library") version "3.3.1"
 }
 
 buildscript {
@@ -77,8 +77,8 @@ kotlin {
             apiSet(projectOrMavenDashPlatform("com.lightningkite", "koolui", versions.getProperty("koolui"), groupings = KTargetPredicates.ui))
         }
         test {
-            apiSet(testing)
-            apiSet(testingAnnotations)
+            implementationSet(testing)
+            implementationSet(testingAnnotations)
         }
     }
 }
