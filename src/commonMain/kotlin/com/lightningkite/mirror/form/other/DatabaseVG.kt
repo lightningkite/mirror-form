@@ -164,6 +164,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     },
                     working = loading,
                     onRefresh = {
+                        generalRequest.subgraph.clear()
                         reset()
                     }
             )

@@ -12,6 +12,7 @@ import com.lightningkite.mirror.info.MirrorRegistry
 import com.lightningkite.mirror.info.MirrorType
 import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.transform
+import com.lightningkite.reacktive.property.transformOnChange
 import kotlinx.serialization.UnionKind
 
 
@@ -22,35 +23,15 @@ class PolymorphicFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(priv
 
     val form = PolymorphicForm<T>(request.observable, request.type)
 
-    var previousType: MirrorType<*>? = null
-    var previousVg: ViewGenerator<DEPENDENCY, VIEW> = ViewGenerator.empty()
-    val subVg = form.type.perfectNullable().transform { _ ->
-        val type = form.type.value.valueOrNull
-        if(previousType == type){
-            return@transform previousVg
-        }
-        previousType = type
-        previousVg = if (type == null) ViewGenerator.empty() else {
+    val subVg = form.type.perfectNullable().transformOnChange { type ->
+        if (type == null) ViewGenerator.empty() else {
             @Suppress("UNCHECKED_CAST")
             request.sub(
                     type = type as MirrorType<T>,
-                    observable = form.actualValue.transform(
-                            mapper = {
-                                if (it is FormState.Success) {
-                                    val nn: Any = it.value!!
-                                    if (type.kClass.isInstance(nn)) {
-                                        it
-                                    } else {
-                                        FormState.empty()
-                                    }
-                                } else it
-                            },
-                            reverseMapper = { it }
-                    ),
+                    observable = form.actualValue.ensureSubtype(type),
                     scale = request.scale
             ).getVG<DEPENDENCY, VIEW>()
         }
-        previousVg
     }
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {

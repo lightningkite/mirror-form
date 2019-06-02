@@ -24,7 +24,7 @@ class ReflectiveViewGenerator<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
     }
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
-        frame(vertical {
+        scrollVertical(vertical {
             for ((field, generator) in fields) {
                 if (field.needsNoContext) {
                     -generator.generate(dependency)

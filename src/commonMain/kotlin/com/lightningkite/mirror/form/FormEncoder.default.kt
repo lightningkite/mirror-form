@@ -22,10 +22,7 @@ import com.lightningkite.lokalize.location.Geohash
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.database.get
-import com.lightningkite.mirror.archive.model.HasUuid
-import com.lightningkite.mirror.archive.model.Reference
-import com.lightningkite.mirror.archive.model.ReferenceMirror
-import com.lightningkite.mirror.archive.model.Uuid
+import com.lightningkite.mirror.archive.model.*
 import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.form.info.humanify
@@ -45,6 +42,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.StructureKind
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
+import kotlin.reflect.KClass
 
 
 inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Number.() -> T, inputType: NumberInputType, decimalPlaces: Int = 2) {
@@ -247,17 +245,25 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     //Map
 
+    //Condition
+    this += object : FormEncoder.BaseTypeInterceptor<Condition<Any?>>(Condition::class as KClass<Condition<Any?>>){
+        override fun matchesTyped(request: FormRequest<Condition<Any?>>): Boolean = request.scale >= ViewSize.Full
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Condition<Any?>>): ViewGenerator<DEPENDENCY, VIEW> {
+            return ConditionFormVG(request.type as ConditionMirror<Any?>, request)
+        }
+
+    }
 
     //Reference
     this += object : FormEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
 
         override fun matchesTyped(request: FormRequest<Reference<*>?>): Boolean {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
-            return request.general.databases[t] != null && request.scale > ViewSize.OneLine
+            @Suppress("UNCHECKED_CAST") val t = ((request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>).base as MirrorClass<Any>
+            return request.general.databases.getOrNull(t.base) != null && request.scale > ViewSize.OneLine
         }
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<HasUuid>
+            @Suppress("UNCHECKED_CAST") val t = ((request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>).base as MirrorClass<HasUuid>
             @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasUuid, Uuid>
             @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasUuid>
                     ?: throw IllegalArgumentException()
@@ -302,7 +308,8 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                                 GlobalScope.launch(Dispatchers.UI) {
                                     loading.value = true
                                     item.value = try {
-                                        database.get(field = idField, value = ref.key)
+                                        @Suppress("UNCHECKED_CAST")
+                                        (ref as Reference<HasUuid>).resolve(t, request.general.databases, request.general.subgraph)
                                     } catch (t: Throwable) {
                                         //TODO: Maybe a failed-to-load message?
                                         println(t.stackTraceString())
@@ -428,7 +435,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
     //Reflective (no fields)
     this += object : FormEncoder.BaseInterceptor(matchPriority = 0f) {
-        override fun <T> matches(request: FormRequest<T>): Boolean = request.type.kind == StructureKind.CLASS && !request.type.isNullable && request.type.base.fields.isEmpty()
+        override fun <T> matches(request: FormRequest<T>): Boolean = (request.type.kind == StructureKind.CLASS || request.type.kind == UnionKind.OBJECT) && !request.type.isNullable && request.type.base.fields.isEmpty()
         override fun <T, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: FormRequest<T>): ViewGenerator<DEPENDENCY, VIEW> {
             request.observable.value = FormState.success(Breaker.fold(request.type, arrayOf()))
             return ViewGenerator.empty()

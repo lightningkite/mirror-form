@@ -23,10 +23,7 @@ import com.lightningkite.lokalize.time.Time
 import com.lightningkite.lokalize.time.TimeStamp
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.database.get
-import com.lightningkite.mirror.archive.model.HasUuid
-import com.lightningkite.mirror.archive.model.Reference
-import com.lightningkite.mirror.archive.model.ReferenceMirror
-import com.lightningkite.mirror.archive.model.Uuid
+import com.lightningkite.mirror.archive.model.*
 import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.form.view.*
 import com.lightningkite.mirror.info.*
@@ -187,20 +184,20 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     this += object : ViewEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
 
         override fun matchesTyped(request: DisplayRequest<Reference<*>?>): Boolean {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
-            return request.general.databases[t] != null && request.scale > ViewSize.OneLine
+            @Suppress("UNCHECKED_CAST") val t = ((request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>).base as MirrorClass<Any>
+            return request.general.databases.getOrNull(t.base) != null && request.scale > ViewSize.OneLine
         }
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            @Suppress("UNCHECKED_CAST") val t = ((request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>).base as MirrorClass<HasUuid>
             @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasUuid, Uuid>
-            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasUuid>
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases.getOrNull(t) as? Database<HasUuid>
                     ?: throw IllegalArgumentException()
 
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     val loading = StandardObservableProperty(false)
-                    val item = StandardObservableProperty<Any?>(null)
+                    val item = StandardObservableProperty<HasUuid?>(null)
                     work(
                             view = card(request.sub(
                                     type = t.nullable,
@@ -216,7 +213,8 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                 GlobalScope.launch(Dispatchers.UI) {
                                     loading.value = true
                                     item.value = try {
-                                        database.get(field = idField, value = ref.key)
+                                        @Suppress("UNCHECKED_CAST")
+                                        (ref as Reference<HasUuid>).resolve(t, request.general.databases, request.general.subgraph)
                                     } catch (t: Throwable) {
                                         //TODO: Maybe a failed-to-load message?
                                         println(t.stackTraceString())
@@ -238,20 +236,19 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     this += object : ViewEncoder.BaseNullableTypeInterceptor<Reference<*>>(Reference::class) {
 
         override fun matchesTyped(request: DisplayRequest<Reference<*>?>): Boolean {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
-            return request.general.databases[t] != null && request.scale == ViewSize.OneLine
+            @Suppress("UNCHECKED_CAST") val t = ((request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>).base as MirrorClass<Any>
+            return request.general.databases.getOrNull(t.base) != null && request.scale == ViewSize.OneLine
         }
 
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Reference<*>?>): ViewGenerator<DEPENDENCY, VIEW> {
-            @Suppress("UNCHECKED_CAST") val t = (request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>
+            @Suppress("UNCHECKED_CAST") val t = ((request.type.base as ReferenceMirror<*>).MODELMirror as MirrorType<Any>).base as MirrorClass<HasUuid>
             @Suppress("UNCHECKED_CAST") val idField = t.base.fields.find { it.name == "id" } as MirrorClass.Field<HasUuid, Uuid>
-            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as? Database<HasUuid>
-                    ?: throw IllegalArgumentException()
+            @Suppress("UNCHECKED_CAST") val database = request.general.databases[t] as Database<HasUuid>
 
             return object : ViewGenerator<DEPENDENCY, VIEW> {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
                     val loading = StandardObservableProperty(false)
-                    val item = StandardObservableProperty<Any?>(null)
+                    val item = StandardObservableProperty<HasUuid?>(null)
                     work(
                             view = request.sub(
                                     type = t.nullable,
@@ -267,7 +264,8 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                 GlobalScope.launch(Dispatchers.UI) {
                                     loading.value = true
                                     item.value = try {
-                                        database.get(field = idField, value = ref.key)
+                                        @Suppress("UNCHECKED_CAST")
+                                        (ref as Reference<HasUuid>).resolve(t, request.general.databases, request.general.subgraph)
                                     } catch (t: Throwable) {
                                         //TODO: Maybe a failed-to-load message?
                                         println(t.stackTraceString())
