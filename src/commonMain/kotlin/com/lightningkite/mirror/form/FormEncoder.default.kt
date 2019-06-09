@@ -5,8 +5,10 @@ import com.lightningkite.kommon.collection.push
 import com.lightningkite.kommon.exception.stackTraceString
 import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
+import com.lightningkite.koolui.ExternalAccess
 import com.lightningkite.koolui.Location
 import com.lightningkite.koolui.async.UI
+
 import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.Importance
@@ -114,16 +116,6 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
         }
     }
 
-    this += object : FormEncoder.BaseNullableTypeInterceptor<Uri>(Uri::class) {
-        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Uri?>): ViewGenerator<DEPENDENCY, VIEW> {
-            return BackedByStringFormViewGenerator(
-                    observable = request.observable,
-                    toT = ::Uri,
-                    inputType = TextInputType.URL
-            )
-        }
-    }
-
     this += object : FormEncoder.BaseNullableTypeInterceptor<Email>(Email::class) {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Email?>): ViewGenerator<DEPENDENCY, VIEW> {
             return BackedByStringFormViewGenerator(
@@ -131,6 +123,30 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                     toT = ::Email,
                     inputType = TextInputType.Email
             )
+        }
+    }
+
+    this += object : FormEncoder.BaseNullableTypeInterceptor<Uri>(Uri::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Uri?>): ViewGenerator<DEPENDENCY, VIEW> {
+            return object: ViewGenerator<DEPENDENCY, VIEW> {
+                val editor = BackedByStringFormViewGenerator<Uri, DEPENDENCY, VIEW>(
+                        observable = request.observable,
+                        toT = ::Uri,
+                        inputType = TextInputType.URL
+                )
+
+                override fun generate(dependency: DEPENDENCY): VIEW = with(dependency){
+                    horizontal {
+                        +editor.generate(dependency)
+                        -imageButton(MaterialIcon.link.color(dependency.colorSet.foreground).withSizing(), "Test Link", Importance.Low){
+                            request.observable.value.valueOrNull?.let {
+                                ExternalAccess.openUri(it)
+                            }
+                        }
+                    }
+                }
+
+            }
         }
     }
 
@@ -305,7 +321,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                             if (ref == null) {
                                 item.value = null
                             } else {
-                                GlobalScope.launch(Dispatchers.UI) {
+                                scope.launch(Dispatchers.UI) {
                                     loading.value = true
                                     item.value = try {
                                         @Suppress("UNCHECKED_CAST")

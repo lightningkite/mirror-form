@@ -11,6 +11,7 @@ import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.geometry.AlignPair
+import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
 import com.lightningkite.koolui.image.withSizing
 import com.lightningkite.koolui.views.ViewFactory
@@ -112,6 +113,7 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
                 }
             }
     )
+    val isGettingLocation = StandardObservableProperty(false)
 
     override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
         vertical {
@@ -125,11 +127,18 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
             }
             -horizontal {
                 +textField(hash, type = TextInputType.CapitalizedIdentifier, placeholder = "Geohash")
-                -imageButton(com.lightningkite.koolui.image.MaterialIcon.myLocation.color(colorSet.foreground).withSizing(), importance = Importance.Low) {
-                    Location.requestOnce("Get your location once to insert it into the form") {
-                        observable.value = FormState.success(it.location)
+                -work(imageButton(MaterialIcon.myLocation.color(colorSet.foreground).withSizing(), importance = Importance.Low) {
+                    GlobalScope.launch {
+                        isGettingLocation.value = true
+                        try {
+                            observable.value = FormState.success(Location.requestOnce("Get your location once to insert it into the form", 100.0).location)
+                        } catch(e:Exception){
+
+                        }
+                        isGettingLocation.value = false
                     }
-                }
+                    Unit
+                }, isGettingLocation)
             }
         }.apply {
 

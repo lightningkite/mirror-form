@@ -1,26 +1,20 @@
 package com.lightningkite.mirror.form
 
 import com.lightningkite.kommon.exception.stackTraceString
+import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
-import com.lightningkite.koolui.ExternalAccess
-import com.lightningkite.koolui.Location
-import com.lightningkite.koolui.UIPlatform
+import com.lightningkite.koolui.*
 import com.lightningkite.koolui.async.UI
+
 import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.Importance
-import com.lightningkite.koolui.current
-import com.lightningkite.koolui.image.MaterialIcon
-import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.*
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.DefaultLocale
 import com.lightningkite.lokalize.location.Geohash
-import com.lightningkite.lokalize.time.Date
-import com.lightningkite.lokalize.time.DateTime
-import com.lightningkite.lokalize.time.Time
-import com.lightningkite.lokalize.time.TimeStamp
+import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.database.get
 import com.lightningkite.mirror.archive.model.*
@@ -60,6 +54,32 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
         }
     }
 
+    fun <T : Any> stringWithClick(
+            type: KClass<T>,
+            priority: Float = 0f,
+            matches: (DisplayRequest<*>) -> Boolean = { true },
+            toString: (T) -> String? = { it.toString() },
+            onClick: (T) -> Unit
+    ) {
+        this += object : ViewEncoder.BaseInterceptor(type, priority) {
+            override fun <T> matches(request: DisplayRequest<T>): Boolean = matches(request)
+
+            @Suppress("UNCHECKED_CAST")
+            override fun <T2, DEPENDENCY : ViewFactory<VIEW>, VIEW> generate(request: DisplayRequest<T2>): ViewGenerator<DEPENDENCY, VIEW> {
+                return object : ViewGenerator<DEPENDENCY, VIEW> {
+                    override fun generate(dependency: DEPENDENCY): VIEW = with(dependency) {
+                        StringViewGenerator<T2, DEPENDENCY, VIEW>(
+                                request = request,
+                                toString = toString as (T2) -> String?
+                        ).generate(dependency).clickable {
+                            onClick(request.observable.value as T)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     string(Unit::class)
     string(Boolean::class)
     string(Byte::class)
@@ -72,10 +92,40 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
     string(String::class)
     string(Uuid::class)
 
+    stringWithClick(Email::class) {
+        ExternalAccess.openUri(Uri("mailto:${it.string}"))
+    }
+    stringWithClick(Uri::class) {
+        ExternalAccess.openUri(it)
+    }
+    this += object : ViewEncoder.BaseTypeInterceptor<Uri>(Uri::class, matchPriority = 1f) {
+        override fun matchesTyped(request: DisplayRequest<Uri>): Boolean = request.owningField?.annotations?.any {
+            (it as? MirrorAnnotation)?.annotationType == ImageUri::class || it is ImageUri
+        } == true
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Uri>): ViewGenerator<DEPENDENCY, VIEW> = ViewGenerator.make("Image") {
+            loadingImage(request.observable) {
+                (Image.fromUrl(it) ?: Image.blank).let {
+                    when (request.scale) {
+                        ViewSize.OneLine -> it.withSizing(scaleType = ImageScaleType.Crop)
+                        ViewSize.Summary -> it.withSizing(scaleType = ImageScaleType.Crop)
+                        ViewSize.Full -> it.withSizing(scaleType = ImageScaleType.Fill)
+                    }
+                }
+            }.let {
+                when (request.scale) {
+                    ViewSize.OneLine -> it.setHeight(40f)
+                    ViewSize.Summary -> it.setHeight(100f)
+                    ViewSize.Full -> it
+                }
+            }
+        }
+    }
+
     string(Date::class) { DefaultLocale.renderDate(it) }
     string(DateTime::class) { DefaultLocale.renderDateTime(it) }
     string(Time::class) { DefaultLocale.renderTime(it) }
     string(TimeStamp::class) { DefaultLocale.renderTimeStamp(it) }
+    string(DaysOfWeek::class)
 
     string(KClass::class) { it.type.localName.humanify() }
     string(MirrorType::class) { it.base.localName.humanify() + if (it.isNullable) " (Optional)" else "" }
@@ -98,7 +148,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                 }
                         ).apply {
                             lifecycle.bind(request.observable) {
-                                GlobalScope.launch(Dispatchers.UI) {
+                                scope.launch(Dispatchers.UI) {
                                     var lastValue: Geohash? = it
                                     while (lastValue != request.observable.value) {
                                         lastValue = request.observable.value
@@ -109,12 +159,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                             }
                         }
                         -imageButton(MaterialIcon.map.color(colorSet.foreground).withSizing(), "Open Map", importance = Importance.Low) {
-                            when(UIPlatform.current){
-                                UIPlatform.IOS -> ExternalAccess.openUri(Uri("http://maps.apple.com/?q=Place&ll=${request.observable.value.latitude},${request.observable.value.longitude}"))
-                                UIPlatform.Android,
-                                UIPlatform.Virtual -> ExternalAccess.openUri(Uri("geo:${request.observable.value.latitude},${request.observable.value.longitude}"))
-                                else -> ExternalAccess.openUri(Uri("https://www.google.com/maps/search/?api=1&query=${request.observable.value.latitude},${request.observable.value.longitude}"))
-                            }
+                            ExternalAccess.openGeohash(request.observable.value)
                         }
                     }
 
@@ -123,6 +168,29 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
         }
     }
 
+
+    this += object : ViewEncoder.BaseTypeInterceptor<ClosedRange<*>>(ClosedRange::class) {
+        override fun matchesTyped(request: DisplayRequest<ClosedRange<*>>): Boolean = request.scale >= ViewSize.Summary
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<ClosedRange<*>>): ViewGenerator<DEPENDENCY, VIEW> {
+            val type = request.type as ClosedRangeMirror<*>
+            @Suppress("UNCHECKED_CAST")
+            return RangeViewGenerator(
+                    subFirst = request.sub<Any?>(type.TMirror as MirrorType<Any?>, request.observable.transform { it.start }).getVG(),
+                    subSecond = request.sub<Any?>(type.TMirror as MirrorType<Any?>, request.observable.transform { it.endInclusive }).getVG()
+            )
+        }
+    }
+    this += object : ViewEncoder.BaseTypeInterceptor<ClosedRange<*>>(ClosedRange::class) {
+        override fun matchesTyped(request: DisplayRequest<ClosedRange<*>>): Boolean = request.scale < ViewSize.Summary
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<ClosedRange<*>>): ViewGenerator<DEPENDENCY, VIEW> {
+            val type = request.type as ClosedRangeMirror<*>
+            @Suppress("UNCHECKED_CAST")
+            return RangeSingleLineViewGenerator(
+                    subFirst = request.sub<Any?>(type.TMirror as MirrorType<Any?>, request.observable.transform { it.start }).getVG(),
+                    subSecond = request.sub<Any?>(type.TMirror as MirrorType<Any?>, request.observable.transform { it.endInclusive }).getVG()
+            )
+        }
+    }
     this += object : ViewEncoder.BaseTypeInterceptor<Pair<Any?, Any?>>(Pair::class) {
         override fun matchesTyped(request: DisplayRequest<Pair<Any?, Any?>>): Boolean = request.scale >= ViewSize.Summary
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: DisplayRequest<Pair<Any?, Any?>>): ViewGenerator<DEPENDENCY, VIEW> {
@@ -210,7 +278,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                             if (ref == null) {
                                 item.value = null
                             } else {
-                                GlobalScope.launch(Dispatchers.UI) {
+                                scope.launch(Dispatchers.UI) {
                                     loading.value = true
                                     item.value = try {
                                         @Suppress("UNCHECKED_CAST")
@@ -261,7 +329,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                             if (ref == null) {
                                 item.value = null
                             } else {
-                                GlobalScope.launch(Dispatchers.UI) {
+                                scope.launch(Dispatchers.UI) {
                                     loading.value = true
                                     item.value = try {
                                         @Suppress("UNCHECKED_CAST")

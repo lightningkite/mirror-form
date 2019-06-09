@@ -174,6 +174,8 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
     var loadIndex = 0
 
     init {
+        condition.add { reset() }
+        sort.add { reset() }
         reset()
     }
 
