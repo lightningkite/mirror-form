@@ -42,7 +42,6 @@
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.30" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.30" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-test-common:1.3.30" level="project" />
-    <orderEntry type="module" module-name="koolui_commonMain" scope="TEST" />
     <orderEntry type="module" module-name="mirror-archive-api_commonMain" scope="TEST" />
     <orderEntry type="module" module-name="mirror-runtime_commonMain" scope="TEST" />
     <orderEntry type="module" module-name="recktangle_commonMain" scope="TEST" />
