@@ -4,9 +4,9 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import java.util.*
 
 plugins {
-    kotlin("multiplatform") version "1.3.21"
+    kotlin("multiplatform")
     `maven-publish`
-    id("com.android.library") version "3.3.1"
+    id("com.android.library") //version "3.3.1"
 }
 
 buildscript {
@@ -39,7 +39,7 @@ version = versions.getProperty(project.name)
 android {
     project.ext.set("android.useAndroidX", true)
     project.ext.set("android.enableJetifier", true)
-    
+
     compileSdkVersion(28)
 
     defaultConfig {
