@@ -7,11 +7,10 @@ import com.lightningkite.mirror.form.FormState
 import com.lightningkite.reacktive.property.MutableObservableProperty
 import com.lightningkite.reacktive.property.transform
 
-class NumberFormViewGenerator<T : Number, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
+class IntegerFormViewGenerator<T : Number, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val observable: MutableObservableProperty<FormState<T?>>,
-        val toT: Double.() -> T,
+        val toT: Long.() -> T,
         val allowNull: Boolean = false,
-        val decimalPlaces: Int = 2,
         val allowNegatives: Boolean = false
 ) : ViewGenerator<DEPENDENCY, VIEW> {
     override fun generate(dependency: DEPENDENCY): VIEW {
@@ -20,10 +19,10 @@ class NumberFormViewGenerator<T : Number, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                 observable.value = FormState.success(null)
             }
         }
-        return dependency.numberField(
-                value = observable.transform<FormState<T?>, Double?>(
+        return dependency.integerField(
+                value = observable.transform<FormState<T?>, Long?>(
                         mapper = {
-                            it.valueOrNull?.toDouble()
+                            it.valueOrNull?.toLong()
                         },
                         reverseMapper = {
                             if(it == null && !allowNull){
@@ -34,7 +33,6 @@ class NumberFormViewGenerator<T : Number, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                         }
                 ),
                 placeholder = if(allowNull) "N/A" else "",
-                decimalPlaces = decimalPlaces,
                 allowNegatives = allowNegatives
         )
     }

@@ -3,10 +3,7 @@ package com.lightningkite.mirror.form.form
 import com.lightningkite.kommon.atomic.AtomicValue
 import com.lightningkite.koolui.Location
 import com.lightningkite.koolui.async.UI
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.imageButton
-import com.lightningkite.koolui.builders.space
-import com.lightningkite.koolui.builders.vertical
+import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
@@ -73,8 +70,8 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
                 }
             }
     )
-    val latitude: SemiboundObservableProperty<Number?, FormState<Geohash>> = SemiboundObservableProperty(
-            startValue = observable.value.valueOrNull?.latitude as? Number,
+    val latitude: SemiboundObservableProperty<Double?, FormState<Geohash>> = SemiboundObservableProperty(
+            startValue = observable.value.valueOrNull?.latitude,
             source = observable,
             consumeUpdate = {
                 value = it.valueOrNull?.latitude
@@ -87,8 +84,8 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
                 }
             }
     )
-    val longitude: SemiboundObservableProperty<Number?, FormState<Geohash>> = SemiboundObservableProperty(
-            startValue = observable.value.valueOrNull?.longitude as? Number,
+    val longitude: SemiboundObservableProperty<Double?, FormState<Geohash>> = SemiboundObservableProperty(
+            startValue = observable.value.valueOrNull?.longitude,
             source = observable,
             consumeUpdate = {
                 value = it.valueOrNull?.longitude
@@ -96,7 +93,7 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
             tryWrite = { long ->
                 if(long != null) {
                     latitude.value?.let { lat ->
-                        value = FormState.success(Geohash(lat.toDouble(), long.toDouble()))
+                        value = FormState.success(Geohash(lat, long))
                     }
                 }
             }
@@ -122,8 +119,8 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
                     AlignPair.TopRight to work(space(1f), geocoding)
             )
             -horizontal {
-                +numberField(latitude, placeholder = "Latitude", type = NumberInputType.Float, decimalPlaces = 5)
-                +numberField(longitude, placeholder = "Longitude", type = NumberInputType.Float, decimalPlaces = 5)
+                +numberField(latitude, placeholder = "Latitude", decimalPlaces = 5)
+                +numberField(longitude, placeholder = "Longitude", decimalPlaces = 5)
             }
             -horizontal {
                 +textField(hash, type = TextInputType.CapitalizedIdentifier, placeholder = "Geohash")

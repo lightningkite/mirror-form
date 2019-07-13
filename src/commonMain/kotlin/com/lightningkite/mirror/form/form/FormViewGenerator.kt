@@ -1,8 +1,6 @@
 package com.lightningkite.mirror.form.form
 
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.imageButton
-import com.lightningkite.koolui.builders.launchInfoDialog
+import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color

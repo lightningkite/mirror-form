@@ -47,15 +47,27 @@ import mirror.kotlin.PairMirror
 import kotlin.reflect.KClass
 
 
-inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Number.() -> T, inputType: NumberInputType, decimalPlaces: Int = 2) {
+inline fun <reified T : Number> FormEncoder.Interceptors.integer(noinline toT: Long.() -> T, allowNegatives: Boolean = true) {
+    this += object : FormEncoder.BaseNullableTypeInterceptor<T>(T::class) {
+        override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<T?>): ViewGenerator<DEPENDENCY, VIEW> {
+            return IntegerFormViewGenerator(
+                    observable = request.observable,
+                    toT = toT,
+                    allowNull = request.type.isNullable,
+                    allowNegatives = allowNegatives
+            )
+        }
+    }
+}
+inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Double.() -> T, allowNegatives: Boolean = true, decimalPlaces: Int = 2) {
     this += object : FormEncoder.BaseNullableTypeInterceptor<T>(T::class) {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<T?>): ViewGenerator<DEPENDENCY, VIEW> {
             return NumberFormViewGenerator(
                     observable = request.observable,
                     toT = toT,
                     allowNull = request.type.isNullable,
-                    numberInputType = request.owningField?.numberInputType ?: inputType,
-                    decimalPlaces = decimalPlaces
+                    decimalPlaces = decimalPlaces,
+                    allowNegatives = allowNegatives
             )
         }
     }
@@ -63,12 +75,13 @@ inline fun <reified T : Number> FormEncoder.Interceptors.number(noinline toT: Nu
 
 val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
 
-    number(Number::toByte, NumberInputType.Integer, 0)
-    number(Number::toShort, NumberInputType.Integer, 0)
-    number(Number::toInt, NumberInputType.Integer, 0)
-    number(Number::toLong, NumberInputType.Integer, 0)
-    number(Number::toFloat, NumberInputType.Float, 4)
-    number(Number::toDouble, NumberInputType.Float, 4)
+    integer(Long::toByte)
+    integer(Long::toShort)
+    integer(Long::toInt)
+    integer(Long::toLong)
+
+    number(Double::toFloat, decimalPlaces = 4)
+    number(Double::toDouble, decimalPlaces = 4)
 
     this += object : FormEncoder.BaseNullableTypeInterceptor<Unit>(Unit::class) {
         override fun <DEPENDENCY : ViewFactory<VIEW>, VIEW> generateTyped(request: FormRequest<Unit?>): ViewGenerator<DEPENDENCY, VIEW> {
