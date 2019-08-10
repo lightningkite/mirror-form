@@ -4,9 +4,9 @@
     <facet type="kotlin-language" name="Kotlin">
       <configuration version="3" platform="JVM 1.6" useProjectSettings="false" isTestModule="true" externalProjectId=":mirror-form">
         <sourceSets>
+          <sourceSet>mirror-form_commonMain</sourceSet>
           <sourceSet>mirror-form_jvmVirtualMain</sourceSet>
           <sourceSet>mirror-form_commonTest</sourceSet>
-          <sourceSet>mirror-form_commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <compilerSettings>
@@ -108,9 +108,9 @@
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-test-junit:1.3.41" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.41" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.jetbrains.kotlin:kotlin-test-common:1.3.41" level="project" />
-    <orderEntry type="module" module-name="mirror-form_commonMain" scope="TEST" />
     <orderEntry type="module" module-name="mirror-form_commonTest" scope="TEST" production-on-test="" />
     <orderEntry type="module" module-name="mirror-form_jvmVirtualMain" scope="TEST" />
+    <orderEntry type="module" module-name="mirror-form_commonMain" scope="TEST" />
     <orderEntry type="module" module-name="koolui_commonMain" scope="TEST" />
     <orderEntry type="module" module-name="koolui_jvmVirtualMain" scope="TEST" />
     <orderEntry type="module" module-name="mirror-archive-api_commonMain" scope="TEST" />
