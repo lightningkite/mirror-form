@@ -5,17 +5,13 @@ import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.imageButton
 import com.lightningkite.koolui.builders.space
 import com.lightningkite.koolui.builders.vertical
-import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.image.ImageScaleType
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.withOptions
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
-import com.lightningkite.mirror.form.DisplayRequest
 import com.lightningkite.mirror.form.FormState
-import com.lightningkite.mirror.form.ViewEncoder
-import com.lightningkite.mirror.info.ListMirror
 import com.lightningkite.reacktive.list.*
 import com.lightningkite.reacktive.property.*
 
@@ -34,7 +30,7 @@ class LiveListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
             -horizontal {
                 +space(1f)
                 -imageButton(
-                        imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                        imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                         label = "Undo",
                         onClick = {
                             previousState = value.toList()
@@ -42,7 +38,7 @@ class LiveListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                         }
                 )
                 -imageButton(
-                        imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                        imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                         label = "Add",
                         onClick = {
                             val duplicate = StandardObservableProperty(FormState.empty<T>())
@@ -68,7 +64,7 @@ class LiveListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     )
                     +viewGenerator(virtualEdit).generate(dependency)
                     -imageButton(
-                            imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                            imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                             label = "More",
                             onClick = {
                                 launchSelector(options = listOf(

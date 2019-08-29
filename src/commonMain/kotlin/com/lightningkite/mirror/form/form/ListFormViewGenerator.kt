@@ -7,21 +7,15 @@ import com.lightningkite.koolui.builders.horizontal
 import com.lightningkite.koolui.builders.imageButton
 import com.lightningkite.koolui.builders.space
 import com.lightningkite.koolui.builders.vertical
-import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.image.ImageScaleType
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.withOptions
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
-import com.lightningkite.mirror.form.DisplayRequest
-import com.lightningkite.mirror.form.FormState
-import com.lightningkite.mirror.form.ViewEncoder
-import com.lightningkite.mirror.info.ListMirror
 import com.lightningkite.reacktive.list.*
 import com.lightningkite.reacktive.property.*
-import com.lightningkite.reacktive.property.lifecycle.bind
 
 class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         val stack: MutableObservableList<ViewGenerator<DEPENDENCY, VIEW>>,
@@ -50,7 +44,7 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                 )
                 +makeView(dependency, virtualEdit)
                 -imageButton(
-                        imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                        imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                         label = "More",
                         importance = Importance.Low,
                         onClick = {
@@ -126,7 +120,7 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
         horizontal {
             +space(1f)
             -imageButton(
-                    imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withSizing(),
+                    imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withOptions(),
                     label = "Undo",
                     importance = Importance.Low,
                     onClick = {
@@ -136,7 +130,7 @@ class ListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     }
             )
             -imageButton(
-                    imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withSizing(),
+                    imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(),
                     label = "Add",
                     importance = Importance.Low,
                     onClick = {

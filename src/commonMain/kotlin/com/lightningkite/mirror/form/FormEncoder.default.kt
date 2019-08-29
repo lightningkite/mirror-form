@@ -6,29 +6,24 @@ import com.lightningkite.kommon.exception.stackTraceString
 import com.lightningkite.kommon.string.Email
 import com.lightningkite.kommon.string.Uri
 import com.lightningkite.koolui.ExternalAccess
-import com.lightningkite.koolui.Location
 import com.lightningkite.koolui.async.UI
 
 import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Animation
 import com.lightningkite.koolui.concepts.Importance
-import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
-import com.lightningkite.koolui.geometry.AlignPair
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.withOptions
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.location.Geohash
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
-import com.lightningkite.mirror.archive.database.get
 import com.lightningkite.mirror.archive.model.*
 import com.lightningkite.mirror.breaker.Breaker
 import com.lightningkite.mirror.form.form.*
 import com.lightningkite.mirror.form.info.humanify
-import com.lightningkite.mirror.form.info.numberInputType
 import com.lightningkite.mirror.form.info.textInputType
 import com.lightningkite.mirror.form.other.DatabaseVG
 import com.lightningkite.mirror.info.*
@@ -36,11 +31,7 @@ import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.MutableObservableListFromProperty
 import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.*
-import com.lightningkite.reacktive.property.lifecycle.bind
-import com.lightningkite.reacktive.property.lifecycle.listen
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.serialization.StructureKind
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
@@ -151,7 +142,7 @@ val FormEncoderDefaultModule = FormEncoder.Interceptors().apply {
                 override fun generate(dependency: DEPENDENCY): VIEW = with(dependency){
                     horizontal {
                         +editor.generate(dependency)
-                        -imageButton(MaterialIcon.link.color(dependency.colorSet.foreground).withSizing(), "Test Link", Importance.Low){
+                        -imageButton(MaterialIcon.link.color(dependency.colorSet.foreground).withOptions(), "Test Link", Importance.Low){
                             request.observable.value.valueOrNull?.let {
                                 ExternalAccess.openUri(it)
                             }

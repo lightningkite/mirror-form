@@ -16,18 +16,14 @@ import com.lightningkite.lokalize.DefaultLocale
 import com.lightningkite.lokalize.location.Geohash
 import com.lightningkite.lokalize.time.*
 import com.lightningkite.mirror.archive.database.Database
-import com.lightningkite.mirror.archive.database.get
 import com.lightningkite.mirror.archive.model.*
 import com.lightningkite.mirror.form.info.humanify
 import com.lightningkite.mirror.form.view.*
 import com.lightningkite.mirror.info.*
 import com.lightningkite.reacktive.list.asObservableList
 import com.lightningkite.reacktive.property.*
-import com.lightningkite.reacktive.property.lifecycle.bind
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.UnionKind
 import mirror.kotlin.PairMirror
 import kotlin.reflect.KClass
@@ -106,9 +102,9 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
             loadingImage(request.observable) {
                 (Image.fromUrl(it) ?: Image.blank).let {
                     when (request.scale) {
-                        ViewSize.OneLine -> it.withSizing(scaleType = ImageScaleType.Crop)
-                        ViewSize.Summary -> it.withSizing(scaleType = ImageScaleType.Crop)
-                        ViewSize.Full -> it.withSizing(scaleType = ImageScaleType.Fill)
+                        ViewSize.OneLine -> it.withOptions(scaleType = ImageScaleType.Crop)
+                        ViewSize.Summary -> it.withOptions(scaleType = ImageScaleType.Crop)
+                        ViewSize.Full -> it.withOptions(scaleType = ImageScaleType.Fill)
                     }
                 }
             }.let {
@@ -158,7 +154,7 @@ val ViewEncoderDefaultModule = ViewEncoder.Interceptors().apply {
                                 }
                             }
                         }
-                        -imageButton(MaterialIcon.map.color(colorSet.foreground).withSizing(), "Open Map", importance = Importance.Low) {
+                        -imageButton(MaterialIcon.map.color(colorSet.foreground).withOptions(), "Open Map", importance = Importance.Low) {
                             ExternalAccess.openGeohash(request.observable.value)
                         }
                     }

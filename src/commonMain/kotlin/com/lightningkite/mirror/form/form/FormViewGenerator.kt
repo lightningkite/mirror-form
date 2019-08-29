@@ -4,7 +4,7 @@ import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Importance
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.withOptions
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.form.FormState
@@ -35,7 +35,7 @@ class FormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                 -sub
             }
             -work(imageButton(
-                    imageWithSizing = MaterialIcon.check.color(dependency.colorSet.foreground).withSizing(),
+                    imageWithSizing = MaterialIcon.check.color(dependency.colorSet.foreground).withOptions(),
                     label = "Save",
                     importance = Importance.Low,
                     onClick = {

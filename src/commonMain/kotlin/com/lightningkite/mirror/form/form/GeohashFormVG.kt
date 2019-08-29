@@ -5,18 +5,15 @@ import com.lightningkite.koolui.Location
 import com.lightningkite.koolui.async.UI
 import com.lightningkite.koolui.builders.*
 import com.lightningkite.koolui.concepts.Importance
-import com.lightningkite.koolui.concepts.NumberInputType
 import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.geometry.AlignPair
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.withOptions
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.lokalize.location.Geohash
 import com.lightningkite.mirror.form.FormState
-import com.lightningkite.reacktive.EnablingMutableCollection
-import com.lightningkite.reacktive.invokeAll
 import com.lightningkite.reacktive.property.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -124,7 +121,7 @@ class GeohashFormVG<DEPENDENCY : ViewFactory<VIEW>, VIEW>(val observable: Mutabl
             }
             -horizontal {
                 +textField(hash, type = TextInputType.CapitalizedIdentifier, placeholder = "Geohash")
-                -work(imageButton(MaterialIcon.myLocation.color(colorSet.foreground).withSizing(), importance = Importance.Low) {
+                -work(imageButton(MaterialIcon.myLocation.color(colorSet.foreground).withOptions(), importance = Importance.Low) {
                     GlobalScope.launch {
                         isGettingLocation.value = true
                         try {

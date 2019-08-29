@@ -1,6 +1,5 @@
 package com.lightningkite.mirror.form.other
 
-import com.lightningkite.kommon.collection.pop
 import com.lightningkite.kommon.collection.popFrom
 import com.lightningkite.kommon.collection.push
 import com.lightningkite.kommon.collection.pushFrom
@@ -12,7 +11,7 @@ import com.lightningkite.koolui.concepts.TextInputType
 import com.lightningkite.koolui.image.ImageScaleType
 import com.lightningkite.koolui.image.MaterialIcon
 import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withSizing
+import com.lightningkite.koolui.image.withOptions
 import com.lightningkite.koolui.views.ViewFactory
 import com.lightningkite.koolui.views.ViewGenerator
 import com.lightningkite.mirror.archive.database.Database
@@ -26,10 +25,7 @@ import com.lightningkite.mirror.request.RemoteExceptionData
 import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.WrapperObservableList
 import com.lightningkite.reacktive.list.filtering
-import com.lightningkite.reacktive.property.MutableObservableProperty
-import com.lightningkite.reacktive.property.ObservableProperty
 import com.lightningkite.reacktive.property.StandardObservableProperty
-import com.lightningkite.reacktive.property.lifecycle.bind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -96,7 +92,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                             card(horizontal {
                                 +displayView
                                 -imageButton(
-                                        imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withSizing(scaleType = ImageScaleType.Crop),
+                                        imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                                         label = "More",
                                         importance = Importance.Low,
                                         onClick = {
@@ -220,7 +216,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
     override fun generateActions(dependency: DEPENDENCY): VIEW? = with(dependency) {
         horizontal {
             -imageButton(
-                    imageWithSizing = MaterialIcon.filter.color(dependency.colorSet.foreground).withSizing(),
+                    imageWithSizing = MaterialIcon.filter.color(dependency.colorSet.foreground).withOptions(),
                     label = "Filter",
                     importance = Importance.Low,
                     onClick = {
@@ -232,7 +228,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     }
             )
             -imageButton(
-                    imageWithSizing = MaterialIcon.sort.color(dependency.colorSet.foreground).withSizing(),
+                    imageWithSizing = MaterialIcon.sort.color(dependency.colorSet.foreground).withOptions(),
                     label = "Sort",
                     importance = Importance.Low,
                     onClick = {
@@ -251,7 +247,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
             )
             if (mutable) {
                 -work(imageButton(
-                        imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withSizing(),
+                        imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(),
                         label = "Add",
                         importance = Importance.Low,
                         onClick = {
