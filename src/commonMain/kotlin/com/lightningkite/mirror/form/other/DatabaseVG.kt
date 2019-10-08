@@ -4,16 +4,26 @@ import com.lightningkite.kommon.collection.popFrom
 import com.lightningkite.kommon.collection.push
 import com.lightningkite.kommon.collection.pushFrom
 import com.lightningkite.kommon.exception.stackTraceString
-import com.lightningkite.koolui.async.UI
-import com.lightningkite.koolui.builders.*
-import com.lightningkite.koolui.concepts.Importance
-import com.lightningkite.koolui.concepts.TextInputType
-import com.lightningkite.koolui.image.ImageScaleType
-import com.lightningkite.koolui.image.MaterialIcon
-import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withOptions
-import com.lightningkite.koolui.views.ViewFactory
-import com.lightningkite.koolui.views.ViewGenerator
+import com.lightningkite.koolui.async.*
+import com.lightningkite.koolui.canvas.*
+import com.lightningkite.koolui.color.*
+import com.lightningkite.koolui.concepts.*
+import com.lightningkite.koolui.geometry.*
+import com.lightningkite.koolui.image.*
+import com.lightningkite.koolui.implementationhelpers.*
+import com.lightningkite.koolui.layout.*
+import com.lightningkite.koolui.notification.*
+import com.lightningkite.koolui.preferences.*
+import com.lightningkite.koolui.resources.*
+import com.lightningkite.koolui.views.*
+import com.lightningkite.koolui.views.basic.*
+import com.lightningkite.koolui.views.dialogs.*
+import com.lightningkite.koolui.views.graphics.*
+import com.lightningkite.koolui.views.interactive.*
+import com.lightningkite.koolui.views.layout.*
+import com.lightningkite.koolui.views.navigation.*
+import com.lightningkite.koolui.views.root.*
+import com.lightningkite.koolui.views.web.*
 import com.lightningkite.mirror.archive.database.Database
 import com.lightningkite.mirror.archive.model.*
 import com.lightningkite.mirror.breaker.Breaker
@@ -26,6 +36,7 @@ import com.lightningkite.reacktive.list.MutableObservableList
 import com.lightningkite.reacktive.list.WrapperObservableList
 import com.lightningkite.reacktive.list.filtering
 import com.lightningkite.reacktive.property.StandardObservableProperty
+import com.lightningkite.reacktive.property.lifecycle.bind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -92,7 +103,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                             card(horizontal {
                                 +displayView
                                 -imageButton(
-                                        imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
+                                        imageWithOptions = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                                         label = "More",
                                         importance = Importance.Low,
                                         onClick = {
@@ -216,7 +227,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
     override fun generateActions(dependency: DEPENDENCY): VIEW? = with(dependency) {
         horizontal {
             -imageButton(
-                    imageWithSizing = MaterialIcon.filter.color(dependency.colorSet.foreground).withOptions(),
+                    imageWithOptions = MaterialIcon.filter.color(dependency.colorSet.foreground).withOptions(),
                     label = "Filter",
                     importance = Importance.Low,
                     onClick = {
@@ -228,7 +239,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     }
             )
             -imageButton(
-                    imageWithSizing = MaterialIcon.sort.color(dependency.colorSet.foreground).withOptions(),
+                    imageWithOptions = MaterialIcon.sort.color(dependency.colorSet.foreground).withOptions(),
                     label = "Sort",
                     importance = Importance.Low,
                     onClick = {
@@ -247,7 +258,7 @@ class DatabaseVG<T : Any, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
             )
             if (mutable) {
                 -work(imageButton(
-                        imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(),
+                        imageWithOptions = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(),
                         label = "Add",
                         importance = Importance.Low,
                         onClick = {

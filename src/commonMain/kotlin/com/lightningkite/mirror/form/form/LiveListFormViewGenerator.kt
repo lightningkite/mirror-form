@@ -1,16 +1,27 @@
 package com.lightningkite.mirror.form.form
 
 import com.lightningkite.kommon.collection.push
-import com.lightningkite.koolui.builders.horizontal
-import com.lightningkite.koolui.builders.imageButton
-import com.lightningkite.koolui.builders.space
-import com.lightningkite.koolui.builders.vertical
-import com.lightningkite.koolui.image.ImageScaleType
-import com.lightningkite.koolui.image.MaterialIcon
-import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withOptions
-import com.lightningkite.koolui.views.ViewFactory
-import com.lightningkite.koolui.views.ViewGenerator
+import com.lightningkite.koolui.async.*
+import com.lightningkite.koolui.canvas.*
+import com.lightningkite.koolui.color.*
+import com.lightningkite.koolui.concepts.*
+import com.lightningkite.koolui.geometry.*
+import com.lightningkite.koolui.image.*
+import com.lightningkite.koolui.implementationhelpers.*
+import com.lightningkite.koolui.layout.*
+import com.lightningkite.koolui.notification.*
+import com.lightningkite.koolui.preferences.*
+import com.lightningkite.koolui.resources.*
+import com.lightningkite.koolui.views.*
+import com.lightningkite.koolui.views.basic.*
+import com.lightningkite.koolui.views.dialogs.*
+import com.lightningkite.koolui.views.graphics.*
+import com.lightningkite.koolui.views.interactive.*
+import com.lightningkite.koolui.views.layout.*
+import com.lightningkite.koolui.views.navigation.*
+import com.lightningkite.koolui.views.root.*
+import com.lightningkite.koolui.views.web.*
+import com.lightningkite.koolui.*
 import com.lightningkite.mirror.form.FormState
 import com.lightningkite.reacktive.list.*
 import com.lightningkite.reacktive.property.*
@@ -30,7 +41,7 @@ class LiveListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
             -horizontal {
                 +space(1f)
                 -imageButton(
-                        imageWithSizing = MaterialIcon.undo.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
+                        imageWithOptions = MaterialIcon.undo.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                         label = "Undo",
                         onClick = {
                             previousState = value.toList()
@@ -38,7 +49,7 @@ class LiveListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                         }
                 )
                 -imageButton(
-                        imageWithSizing = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
+                        imageWithOptions = MaterialIcon.add.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                         label = "Add",
                         onClick = {
                             val duplicate = StandardObservableProperty(FormState.empty<T>())
@@ -64,7 +75,7 @@ class LiveListFormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                     )
                     +viewGenerator(virtualEdit).generate(dependency)
                     -imageButton(
-                            imageWithSizing = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
+                            imageWithOptions = MaterialIcon.moreVert.color(dependency.colorSet.foreground).withOptions(scaleType = ImageScaleType.Crop),
                             label = "More",
                             onClick = {
                                 launchSelector(options = listOf(

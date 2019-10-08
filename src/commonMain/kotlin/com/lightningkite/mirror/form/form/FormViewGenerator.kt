@@ -1,12 +1,26 @@
 package com.lightningkite.mirror.form.form
 
-import com.lightningkite.koolui.builders.*
-import com.lightningkite.koolui.concepts.Importance
-import com.lightningkite.koolui.image.MaterialIcon
-import com.lightningkite.koolui.image.color
-import com.lightningkite.koolui.image.withOptions
-import com.lightningkite.koolui.views.ViewFactory
-import com.lightningkite.koolui.views.ViewGenerator
+import com.lightningkite.koolui.async.*
+import com.lightningkite.koolui.canvas.*
+import com.lightningkite.koolui.color.*
+import com.lightningkite.koolui.concepts.*
+import com.lightningkite.koolui.geometry.*
+import com.lightningkite.koolui.image.*
+import com.lightningkite.koolui.implementationhelpers.*
+import com.lightningkite.koolui.layout.*
+import com.lightningkite.koolui.notification.*
+import com.lightningkite.koolui.preferences.*
+import com.lightningkite.koolui.resources.*
+import com.lightningkite.koolui.views.*
+import com.lightningkite.koolui.views.basic.*
+import com.lightningkite.koolui.views.dialogs.*
+import com.lightningkite.koolui.views.graphics.*
+import com.lightningkite.koolui.views.interactive.*
+import com.lightningkite.koolui.views.layout.*
+import com.lightningkite.koolui.views.navigation.*
+import com.lightningkite.koolui.views.root.*
+import com.lightningkite.koolui.views.web.*
+import com.lightningkite.koolui.*
 import com.lightningkite.mirror.form.FormState
 import com.lightningkite.mirror.form.GeneralRequest
 import com.lightningkite.mirror.form.PartFormViewGenerator
@@ -35,7 +49,7 @@ class FormViewGenerator<T, DEPENDENCY : ViewFactory<VIEW>, VIEW>(
                 -sub
             }
             -work(imageButton(
-                    imageWithSizing = MaterialIcon.check.color(dependency.colorSet.foreground).withOptions(),
+                    imageWithOptions = MaterialIcon.check.color(dependency.colorSet.foreground).withOptions(),
                     label = "Save",
                     importance = Importance.Low,
                     onClick = {

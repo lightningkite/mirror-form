@@ -27,7 +27,7 @@
 //    override fun generateActions(dependency: DEPENDENCY): VIEW? = with(dependency) {
 //        work(
 //                view = imageButton(
-//                        imageWithSizing = MaterialIcon.check.color(dependency.colorSet.foreground).withSizing(),
+//                        imageWithOptions = MaterialIcon.check.color(dependency.colorSet.foreground).withSizing(),
 //                        label = "Run Request",
 //                        importance = Importance.Low,
 //                        onClick = {
