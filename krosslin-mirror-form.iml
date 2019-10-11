@@ -293,8 +293,8 @@
     <orderEntry type="module" module-name="kommon" />
     <orderEntry type="module" module-name="mirror-runtime_jvmMain" />
     <orderEntry type="module" module-name="kommon_jvmMain" />
-    <orderEntry type="module" module-name="kommon_commonMain" />
     <orderEntry type="module" module-name="mirror-runtime_commonMain" />
+    <orderEntry type="module" module-name="kommon_commonMain" />
     <orderEntry type="module" module-name="mirror-form_commonMain" />
     <orderEntry type="module" module-name="mirror-form_commonTest" scope="TEST" />
   </component>
